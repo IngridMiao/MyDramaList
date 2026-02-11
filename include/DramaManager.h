@@ -23,6 +23,7 @@ private:
 public:
     // 基礎 CRUD 功能
     void addDrama(const Drama& d);
+    void deleteDrama(const std::string& title);
     void loadFromFile(const std::string& filename);
     void saveToFile(const std::string& filename);
 

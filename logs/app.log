@@ -14,3 +14,9 @@
 [2026-02-11 13:48:50] [INFO] Application Starting...
 [2026-02-11 13:48:50] [INFO] Loaded 6 dramas from data/database.csv
 [2026-02-11 13:49:07] [INFO] Application Shutting Down.
+[2026-02-11 13:56:08] [INFO] Application Starting...
+[2026-02-11 13:56:08] [INFO] Loaded 6 dramas from data/database.csv
+[2026-02-11 13:57:09] [INFO] Added drama: 有罪之身
+[2026-02-11 13:57:59] [INFO] Deleted drama: 黑暗榮耀
+[2026-02-11 13:58:12] [INFO] Saved 1 dramas to data/database.csv
+[2026-02-11 13:58:12] [INFO] Application Shutting Down.

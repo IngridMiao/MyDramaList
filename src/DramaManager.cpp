@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 void DramaManager::addDrama(const Drama& d) {
     // if drama exists
@@ -18,6 +19,18 @@ void DramaManager::addDrama(const Drama& d) {
     }
     dramas.push_back(d);
     Logger::getInstance().log(LogLevel::INFO, "Added drama: " + d.title);
+}
+
+void DramaManager::deleteDrama(const std::string& title) {
+    auto it = std::remove_if(dramas.begin(), dramas.end(),
+                             [&](const Drama& d) { return d.title == title; });
+
+    if (it != dramas.end()) {
+        dramas.erase(it, dramas.end());
+        Logger::getInstance().log(LogLevel::INFO, "Deleted drama: " + title);
+    } else {
+        Logger::getInstance().log(LogLevel::ERROR, "Attempted to delete non-existent drama: " + title);
+    }
 }
 
 void DramaManager::loadFromFile(const std::string& filename) {
