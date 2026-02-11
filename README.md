@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # My Drama List (觀影清單管理系統)
 
 ![C++](https://img.shields.io/badge/Language-C++17-blue.svg)
@@ -37,3 +38,6 @@
 ```bash
 git clone https://github.com/yourusername/My-Drama-List.git
 cd My-Drama-List
+=======
+
+>>>>>>> 213743512e5809b5b3aaa02858b90833baabdaea
