@@ -11,7 +11,7 @@ CXXFLAGS = -std=c++17 -Iinclude -Wall -Wextra
 TARGET = drama_server
 
 # 原始碼檔案
-SRCS = src/main.cpp src/Logger.cpp
+SRCS = src/main.cpp src/Logger.cpp src/DramaManager.cpp
 
 # 物件檔案 (將 .cpp 換成 .o)
 OBJS = $(SRCS:.cpp=.o)
