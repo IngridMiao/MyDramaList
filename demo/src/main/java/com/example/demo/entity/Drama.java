@@ -12,8 +12,8 @@ public class Drama {
     @Id
     private String title; // 你原本設定 video_name 為 PK
     private String tag;
-    private Double grade;
-    private Integer viewPoint; // 觀看點/心得
+    private Float grade;
+    private String viewPoint; // 觀看點/心得
     private String link1;
     private String link2;
     private String link3;
