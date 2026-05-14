@@ -17,13 +17,20 @@ public class DramaController {
     private DramaService dramaService;
 
     @GetMapping
-    public ResponseEntity<List<Drama>> getAllDramas() {
-        return ResponseEntity.ok(dramaService.getAllDramas());
+    public ResponseEntity<List<Drama>> getAllDramas(
+            @RequestParam Long userId,
+            @RequestParam(required = false) Boolean shown) {
+        if (shown != null) {
+            return ResponseEntity.ok(dramaService.getDramasByShown(userId, shown));
+        }
+        return ResponseEntity.ok(dramaService.getDramasByUserId(userId));
     }
 
     @GetMapping("/{title}")
-    public ResponseEntity<Drama> getDramaById(@PathVariable String title) {
-        return dramaService.getDramaById(title)
+    public ResponseEntity<Drama> getDramaById(
+            @PathVariable String title,
+            @RequestParam Long userId) {
+        return dramaService.getDramaById(title, userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -34,8 +41,10 @@ public class DramaController {
     }
 
     @DeleteMapping("/{title}")
-    public ResponseEntity<Void> deleteDrama(@PathVariable String title) {
-        dramaService.deleteDrama(title);
+    public ResponseEntity<Void> deleteDrama(
+            @PathVariable String title,
+            @RequestParam Long userId) {
+        dramaService.deleteDrama(title, userId);
         return ResponseEntity.noContent().build();
     }
 }
