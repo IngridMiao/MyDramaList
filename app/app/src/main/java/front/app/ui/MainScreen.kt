@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import android.net.Uri
 import front.app.ui.add.AddScreen
 import front.app.ui.friend.FriendScreen
 import front.app.ui.home.HomeScreen
@@ -19,8 +20,6 @@ import front.app.ui.profile.ProfileScreen
 import front.app.ui.theme.ThemeViewModel
 import front.app.ui.detail.DetailScreen
 import front.app.viewmodel.DramaViewModel
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @Composable
 fun MainScreen(
@@ -71,7 +70,7 @@ fun MainScreen(
                     viewModel = dramaViewModel,
                     onAddClick = { navController.navigate("add") },
                     onCardClick = { drama ->
-                        val encodedTitle = URLEncoder.encode(drama.title, StandardCharsets.UTF_8.toString())
+                        val encodedTitle = Uri.encode(drama.title)
                         navController.navigate("detail/$encodedTitle")
                     }
                 )
@@ -93,10 +92,11 @@ fun MainScreen(
             }
             composable("detail/{title}") { backStackEntry ->
                 val title = backStackEntry.arguments?.getString("title") ?: ""
+                val decodedTitle = Uri.decode(title)
                 DetailScreen(
-                    title = title,
+                    title = decodedTitle,
                     userId = userId,
-                    viewModel = dramaViewModel,
+                    viewModel = dramaViewModel, // 使用共享的 ViewModel
                     onBack = { navController.popBackStack() }
                 )
             }

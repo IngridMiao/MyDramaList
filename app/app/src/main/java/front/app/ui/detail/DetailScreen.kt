@@ -28,7 +28,8 @@ fun DetailScreen(
     viewModel: DramaViewModel = viewModel()
 ) {
     val dramaState by viewModel.currentDrama.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val isDetailLoading by viewModel.isDetailLoading.collectAsState()
+    val hasFetchedDetail by viewModel.hasFetchedDetail.collectAsState()
     val backendTags by viewModel.tags.collectAsState()
     val commonTags = remember { dummyTags.filter { it != "全部" } }
     val displayTags = remember(backendTags) {
@@ -118,15 +119,15 @@ fun DetailScreen(
             )
         }
     ) { innerPadding ->
-        if (isLoading) {
+        if (isDetailLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-        } else if (dramaState == null) {
+        } else if (hasFetchedDetail && dramaState == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("找不到資料")
             }
-        } else {
+        } else if (dramaState != null) {
             val drama = dramaState!!
             LazyColumn(
                 modifier = Modifier

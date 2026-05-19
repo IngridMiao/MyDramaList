@@ -26,6 +26,12 @@ class DramaViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _isDetailLoading = MutableStateFlow(false)
+    val isDetailLoading = _isDetailLoading.asStateFlow()
+
+    private val _hasFetchedDetail = MutableStateFlow(false)
+    val hasFetchedDetail = _hasFetchedDetail.asStateFlow()
+
     fun fetchDramas(userId: Long) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -35,7 +41,7 @@ class DramaViewModel : ViewModel() {
                     _dramas.value = response.body() ?: emptyList()
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Error handling
             } finally {
                 _isLoading.value = false
             }
@@ -50,7 +56,7 @@ class DramaViewModel : ViewModel() {
                     _tags.value = response.body() ?: emptyList()
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Error handling
             }
         }
     }
@@ -64,24 +70,26 @@ class DramaViewModel : ViewModel() {
                     onComplete()
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Error handling
             }
         }
     }
 
     fun fetchDrama(title: String, userId: Long) {
         viewModelScope.launch {
-            _currentDrama.value = null // Reset before fetch
-            _isLoading.value = true
+            _hasFetchedDetail.value = false
+            _isDetailLoading.value = true
+            _currentDrama.value = null 
             try {
                 val response = repository.getDrama(title, userId)
                 if (response.isSuccessful) {
                     _currentDrama.value = response.body()
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Error handling
             } finally {
-                _isLoading.value = false
+                _isDetailLoading.value = false
+                _hasFetchedDetail.value = true
             }
         }
     }
@@ -91,11 +99,15 @@ class DramaViewModel : ViewModel() {
             try {
                 val response = repository.saveDrama(drama)
                 if (response.isSuccessful) {
-                    fetchDramas(drama.userId)
+                    // Refresh and wait for completion before going back
+                    val refreshResponse = repository.getDramas(drama.userId)
+                    if (refreshResponse.isSuccessful) {
+                        _dramas.value = refreshResponse.body() ?: emptyList()
+                    }
                     onComplete()
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Error handling
             }
         }
     }
@@ -105,11 +117,15 @@ class DramaViewModel : ViewModel() {
             try {
                 val response = repository.deleteDrama(title, userId)
                 if (response.isSuccessful) {
-                    fetchDramas(userId)
+                    // Refresh and wait for completion before going back
+                    val refreshResponse = repository.getDramas(userId)
+                    if (refreshResponse.isSuccessful) {
+                        _dramas.value = refreshResponse.body() ?: emptyList()
+                    }
                     onComplete()
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Error handling
             }
         }
     }
