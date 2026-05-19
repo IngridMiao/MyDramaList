@@ -29,7 +29,9 @@ fun DetailScreen(
 ) {
     val dramaState by viewModel.currentDrama.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val tagList by viewModel.tags.collectAsState()
+    val backendTags by viewModel.tags.collectAsState()
+    val commonTags = remember { dummyTags.filter { it != "全部" } }
+    val displayTags = (commonTags + backendTags.map { it.tagName }).distinct()
 
     var isEditing by remember { mutableStateOf(false) }
 
@@ -174,7 +176,7 @@ fun DetailScreen(
                                 Button(
                                     onClick = {
                                         if (newTagInput.isNotBlank()) {
-                                            if (tagList.none { it.tagName == newTagInput }) {
+                                            if (displayTags.none { it == newTagInput }) {
                                                 viewModel.saveTag(Tag(userId = userId, tagName = newTagInput))
                                             }
                                             editSelectedTag = newTagInput
@@ -208,11 +210,11 @@ fun DetailScreen(
                                     expanded = tagDropdownExpanded,
                                     onDismissRequest = { tagDropdownExpanded = false }
                                 ) {
-                                    tagList.forEach { tag ->
+                                    displayTags.forEach { tagName ->
                                         DropdownMenuItem(
-                                            text = { Text(tag.tagName) },
+                                            text = { Text(tagName) },
                                             onClick = {
-                                                editSelectedTag = tag.tagName
+                                                editSelectedTag = tagName
                                                 tagDropdownExpanded = false
                                             }
                                         )

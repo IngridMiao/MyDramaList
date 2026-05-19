@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.Drama
 import front.app.model.Tag
+import front.app.ui.home.dummyTags
 import front.app.viewmodel.DramaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +34,10 @@ fun AddScreen(
     var links by remember { mutableStateOf(listOf("")) }
 
     // tag 相關
-    val tagList by viewModel.tags.collectAsState()
+    val backendTags by viewModel.tags.collectAsState()
+    val commonTags = remember { dummyTags.filter { it != "全部" } }
+    val displayTags = (commonTags + backendTags.map { it.tagName }).distinct()
+
     var selectedTag by remember { mutableStateOf("") }
     var tagDropdownExpanded by remember { mutableStateOf(false) }
     var showAddTagDialog by remember { mutableStateOf(false) }
@@ -122,7 +126,7 @@ fun AddScreen(
                         Button(
                             onClick = {
                                 if (newTagInput.isNotBlank()) {
-                                    if (tagList.none { it.tagName == newTagInput }) {
+                                    if (displayTags.none { it == newTagInput }) {
                                         viewModel.saveTag(Tag(userId = userId, tagName = newTagInput))
                                     }
                                     selectedTag = newTagInput
@@ -156,11 +160,11 @@ fun AddScreen(
                                 expanded = tagDropdownExpanded,
                                 onDismissRequest = { tagDropdownExpanded = false }
                             ) {
-                                tagList.forEach { tag ->
+                                displayTags.forEach { tagName ->
                                     DropdownMenuItem(
-                                        text = { Text(tag.tagName) },
+                                        text = { Text(tagName) },
                                         onClick = {
-                                            selectedTag = tag.tagName
+                                            selectedTag = tagName
                                             tagDropdownExpanded = false
                                         }
                                     )

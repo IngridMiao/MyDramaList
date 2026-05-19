@@ -53,7 +53,9 @@ fun HomeScreen(
 
     var isAddingTag by remember { mutableStateOf(false) }
     var newTagInput by remember { mutableStateOf("") }
-    val tagList by viewModel.tags.collectAsState()
+    val backendTags by viewModel.tags.collectAsState()
+    val commonTags = remember { dummyTags.filter { it != "全部" } }
+    val displayTags = (commonTags + backendTags.map { it.tagName }).distinct()
 
     val dramas by viewModel.dramas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -175,7 +177,7 @@ fun HomeScreen(
                                     Button(
                                         onClick = {
                                             if (newTagInput.isNotBlank()) {
-                                                if (tagList.none { it.tagName == newTagInput }) {
+                                                if (displayTags.none { it == newTagInput }) {
                                                     viewModel.saveTag(Tag(userId = userId, tagName = newTagInput))
                                                 }
                                                 pendingTags = pendingTags + newTagInput
@@ -197,26 +199,26 @@ fun HomeScreen(
                             }
                             HorizontalDivider()
                             Spacer(Modifier.height(4.dp))
-                            tagList.forEach { tag ->
+                            displayTags.forEach { tagName ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            pendingTags = if (pendingTags.contains(tag.tagName))
-                                                pendingTags - tag.tagName else pendingTags + tag.tagName
+                                            pendingTags = if (pendingTags.contains(tagName))
+                                                pendingTags - tagName else pendingTags + tagName
                                         }
                                         .padding(vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
-                                        checked = pendingTags.contains(tag.tagName),
+                                        checked = pendingTags.contains(tagName),
                                         onCheckedChange = {
-                                            pendingTags = if (it) pendingTags + tag.tagName
-                                            else pendingTags - tag.tagName
+                                            pendingTags = if (it) pendingTags + tagName
+                                            else pendingTags - tagName
                                         }
                                     )
                                     Spacer(Modifier.width(8.dp))
-                                    Text(tag.tagName, style = MaterialTheme.typography.bodyMedium)
+                                    Text(tagName, style = MaterialTheme.typography.bodyMedium)
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
