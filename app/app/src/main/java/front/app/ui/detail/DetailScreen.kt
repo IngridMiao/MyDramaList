@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.Drama
+import front.app.model.Tag
 import front.app.ui.home.dummyTags
 import front.app.viewmodel.DramaViewModel
 
@@ -28,6 +29,7 @@ fun DetailScreen(
 ) {
     val dramaState by viewModel.currentDrama.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val tagList by viewModel.tags.collectAsState()
 
     var isEditing by remember { mutableStateOf(false) }
 
@@ -41,12 +43,13 @@ fun DetailScreen(
     var editSelectedTag by remember { mutableStateOf("") }
 
     var tagDropdownExpanded by remember { mutableStateOf(false) }
-    var tagList by remember { mutableStateOf(dummyTags.filter { it != "全部" }) }
     var showAddTagDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var newTagInput by remember { mutableStateOf("") }
 
     LaunchedEffect(title, userId) {
         viewModel.fetchDrama(title, userId)
+        viewModel.fetchTags(userId)
     }
 
     LaunchedEffect(dramaState) {
@@ -149,50 +152,87 @@ fun DetailScreen(
                 // ── Tag ──
                 item {
                     if (isEditing) {
-                        ExposedDropdownMenuBox(
-                            expanded = tagDropdownExpanded,
-                            onExpandedChange = { tagDropdownExpanded = it }
-                        ) {
-                            OutlinedTextField(
-                                value = editSelectedTag,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Tag") },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = tagDropdownExpanded)
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = tagDropdownExpanded,
-                                onDismissRequest = { tagDropdownExpanded = false }
+                        if (showAddTagDialog) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                tagList.forEach { tag ->
+                                OutlinedTextField(
+                                    value = newTagInput,
+                                    onValueChange = { newTagInput = it },
+                                    label = { Text("新增 Tag") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                TextButton(onClick = {
+                                    showAddTagDialog = false
+                                    newTagInput = ""
+                                }) {
+                                    Text("取消")
+                                }
+                                Button(
+                                    onClick = {
+                                        if (newTagInput.isNotBlank()) {
+                                            if (tagList.none { it.tagName == newTagInput }) {
+                                                viewModel.saveTag(Tag(userId = userId, tagName = newTagInput))
+                                            }
+                                            editSelectedTag = newTagInput
+                                        }
+                                        showAddTagDialog = false
+                                        newTagInput = ""
+                                    },
+                                    enabled = newTagInput.isNotBlank()
+                                ) {
+                                    Text("確認")
+                                }
+                            }
+                        } else {
+                            ExposedDropdownMenuBox(
+                                expanded = tagDropdownExpanded,
+                                onExpandedChange = { tagDropdownExpanded = it }
+                            ) {
+                                OutlinedTextField(
+                                    value = editSelectedTag,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Tag") },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = tagDropdownExpanded)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = tagDropdownExpanded,
+                                    onDismissRequest = { tagDropdownExpanded = false }
+                                ) {
+                                    tagList.forEach { tag ->
+                                        DropdownMenuItem(
+                                            text = { Text(tag.tagName) },
+                                            onClick = {
+                                                editSelectedTag = tag.tagName
+                                                tagDropdownExpanded = false
+                                            }
+                                        )
+                                    }
+                                    HorizontalDivider()
                                     DropdownMenuItem(
-                                        text = { Text(tag) },
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Outlined.Add, contentDescription = null,
+                                                    modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("新增 tag")
+                                            }
+                                        },
                                         onClick = {
-                                            editSelectedTag = tag
                                             tagDropdownExpanded = false
+                                            showAddTagDialog = true
                                         }
                                     )
                                 }
-                                HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Outlined.Add, contentDescription = null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("新增 tag")
-                                        }
-                                    },
-                                    onClick = {
-                                        tagDropdownExpanded = false
-                                        showAddTagDialog = true
-                                    }
-                                )
                             }
                         }
                     } else {
@@ -400,40 +440,6 @@ fun DetailScreen(
                 item { Spacer(Modifier.height(60.dp)) }
             }
         }
-    }
-
-    if (showAddTagDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddTagDialog = false; newTagInput = "" },
-            title = { Text("新增 Tag") },
-            text = {
-                OutlinedTextField(
-                    value = newTagInput,
-                    onValueChange = { newTagInput = it },
-                    label = { Text("Tag 名稱") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (newTagInput.isNotBlank() && !tagList.contains(newTagInput)) {
-                            tagList = tagList + newTagInput
-                        }
-                        editSelectedTag = newTagInput
-                        showAddTagDialog = false
-                        newTagInput = ""
-                    },
-                    enabled = newTagInput.isNotBlank()
-                ) { Text("確認") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddTagDialog = false; newTagInput = "" }) {
-                    Text("取消")
-                }
-            }
-        )
     }
 
     if (showDeleteConfirmDialog) {

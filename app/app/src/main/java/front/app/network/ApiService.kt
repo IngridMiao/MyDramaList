@@ -1,6 +1,7 @@
 package front.app.network
 
 import front.app.model.Drama
+import front.app.model.Tag
 import front.app.model.User
 import retrofit2.Response
 import retrofit2.http.*
@@ -15,6 +16,13 @@ interface ApiService {
 
     @GET("api/users/{id}")
     suspend fun getUser(@Path("id") id: Long): Response<User>
+
+    // Tag APIs
+    @GET("api/tags")
+    suspend fun getTags(@Query("userId") userId: Long): Response<List<Tag>>
+
+    @POST("api/tags")
+    suspend fun saveTag(@Body tag: Tag): Response<Tag>
 
     // Drama APIs
     @GET("api/dramas")

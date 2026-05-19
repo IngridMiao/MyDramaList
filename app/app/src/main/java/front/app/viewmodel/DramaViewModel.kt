@@ -3,16 +3,22 @@ package front.app.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import front.app.model.Drama
+import front.app.model.Tag
 import front.app.repository.DramaRepository
+import front.app.repository.TagRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class DramaViewModel : ViewModel() {
     private val repository = DramaRepository()
+    private val tagRepository = TagRepository()
 
     private val _dramas = MutableStateFlow<List<Drama>>(emptyList())
     val dramas = _dramas.asStateFlow()
+
+    private val _tags = MutableStateFlow<List<Tag>>(emptyList())
+    val tags = _tags.asStateFlow()
 
     private val _currentDrama = MutableStateFlow<Drama?>(null)
     val currentDrama = _currentDrama.asStateFlow()
@@ -32,6 +38,33 @@ class DramaViewModel : ViewModel() {
                 // Handle error
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun fetchTags(userId: Long) {
+        viewModelScope.launch {
+            try {
+                val response = tagRepository.getTags(userId)
+                if (response.isSuccessful) {
+                    _tags.value = response.body() ?: emptyList()
+                }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun saveTag(tag: Tag, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val response = tagRepository.saveTag(tag)
+                if (response.isSuccessful) {
+                    fetchTags(tag.userId)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.Drama
+import front.app.model.Tag
 import front.app.viewmodel.DramaViewModel
 
 // TODO: 之後換成從 ViewModel 取得的真實資料
@@ -50,11 +51,16 @@ fun HomeScreen(
     var sortType by remember { mutableStateOf(SortType.ADDED_TIME) }
     var shownFilter by remember { mutableStateOf(ShownFilter.ALL) }
 
+    var isAddingTag by remember { mutableStateOf(false) }
+    var newTagInput by remember { mutableStateOf("") }
+    val tagList by viewModel.tags.collectAsState()
+
     val dramas by viewModel.dramas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(userId) {
         viewModel.fetchDramas(userId)
+        viewModel.fetchTags(userId)
     }
 
     val filteredDramas = remember(dramas, searchQuery, selectedTags, sortType, shownFilter) {
@@ -145,33 +151,72 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
                         ) {
-                            TextButton(onClick = { /* TODO: 新增 tag */ }) {
-                                Icon(Icons.Outlined.Add, contentDescription = null)
-                                Spacer(Modifier.width(4.dp))
-                                Text("+ add tag")
+                            if (isAddingTag) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = newTagInput,
+                                        onValueChange = { newTagInput = it },
+                                        label = { Text("新 Tag") },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true
+                                    )
+                                    TextButton(onClick = {
+                                        isAddingTag = false
+                                        newTagInput = ""
+                                    }) {
+                                        Text("取消")
+                                    }
+                                    Button(
+                                        onClick = {
+                                            if (newTagInput.isNotBlank()) {
+                                                if (tagList.none { it.tagName == newTagInput }) {
+                                                    viewModel.saveTag(Tag(userId = userId, tagName = newTagInput))
+                                                }
+                                                pendingTags = pendingTags + newTagInput
+                                            }
+                                            isAddingTag = false
+                                            newTagInput = ""
+                                        },
+                                        enabled = newTagInput.isNotBlank()
+                                    ) {
+                                        Text("確認")
+                                    }
+                                }
+                            } else {
+                                TextButton(onClick = { isAddingTag = true }) {
+                                    Icon(Icons.Outlined.Add, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("+ add tag")
+                                }
                             }
                             HorizontalDivider()
                             Spacer(Modifier.height(4.dp))
-                            dummyTags.filter { it != "全部" }.forEach { tag ->
+                            tagList.forEach { tag ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            pendingTags = if (pendingTags.contains(tag))
-                                                pendingTags - tag else pendingTags + tag
+                                            pendingTags = if (pendingTags.contains(tag.tagName))
+                                                pendingTags - tag.tagName else pendingTags + tag.tagName
                                         }
                                         .padding(vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
-                                        checked = pendingTags.contains(tag),
+                                        checked = pendingTags.contains(tag.tagName),
                                         onCheckedChange = {
-                                            pendingTags = if (it) pendingTags + tag
-                                            else pendingTags - tag
+                                            pendingTags = if (it) pendingTags + tag.tagName
+                                            else pendingTags - tag.tagName
                                         }
                                     )
                                     Spacer(Modifier.width(8.dp))
-                                    Text(tag, style = MaterialTheme.typography.bodyMedium)
+                                    Text(tag.tagName, style = MaterialTheme.typography.bodyMedium)
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
