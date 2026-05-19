@@ -17,6 +17,7 @@ public class Drama {
     @Id
     private Long userId;
 
+    private String actors;
     private String tag;
     private boolean shown = true;   //public or private, default true
     private Float grade;

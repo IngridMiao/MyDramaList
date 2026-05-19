@@ -41,6 +41,14 @@ public class UserController {
         return ResponseEntity.ok(userService.saveUser(user));
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<User> login(@RequestBody User user) {
+        return userService.getUserByUserName(user.getUserName())
+                .filter(u -> u.getPassword() != null && u.getPassword().equals(user.getPassword()))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(401).build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
