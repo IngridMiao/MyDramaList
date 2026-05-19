@@ -18,7 +18,9 @@ import front.app.ui.home.HomeScreen
 import front.app.ui.profile.ProfileScreen
 import front.app.ui.theme.ThemeViewModel
 import front.app.ui.detail.DetailScreen
-
+import front.app.viewmodel.DramaViewModel
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun MainScreen(
@@ -28,6 +30,7 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     var selectedTab by remember { mutableStateOf(1) }
+    val dramaViewModel: DramaViewModel = viewModel()
 
     val tabs = listOf(
         Triple("friend", "朋友圈", Icons.Outlined.Group),
@@ -65,10 +68,11 @@ fun MainScreen(
             composable("home") {
                 HomeScreen(
                     userId = userId,
+                    viewModel = dramaViewModel,
                     onAddClick = { navController.navigate("add") },
                     onCardClick = { drama ->
-                        // 這裡之後要改為傳遞 drama 的 ID 或 Title
-                        navController.navigate("detail/${drama.title}")
+                        val encodedTitle = URLEncoder.encode(drama.title, StandardCharsets.UTF_8.toString())
+                        navController.navigate("detail/$encodedTitle")
                     }
                 )
             }
@@ -82,6 +86,7 @@ fun MainScreen(
             composable("add") {
                 AddScreen(
                     userId = userId,
+                    viewModel = dramaViewModel,
                     onBack = { navController.popBackStack() },
                     onSave = { navController.popBackStack() }
                 )
@@ -91,6 +96,7 @@ fun MainScreen(
                 DetailScreen(
                     title = title,
                     userId = userId,
+                    viewModel = dramaViewModel,
                     onBack = { navController.popBackStack() }
                 )
             }

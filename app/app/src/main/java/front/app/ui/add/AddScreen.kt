@@ -5,7 +5,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,7 +38,9 @@ fun AddScreen(
     // tag 相關
     val backendTags by viewModel.tags.collectAsState()
     val commonTags = remember { dummyTags.filter { it != "全部" } }
-    val displayTags = (commonTags + backendTags.map { it.tagName }).distinct()
+    val displayTags = remember(backendTags) {
+        (commonTags + backendTags.map { it.tagName }).distinct()
+    }
 
     var selectedTag by remember { mutableStateOf("") }
     var tagDropdownExpanded by remember { mutableStateOf(false) }
@@ -50,7 +54,7 @@ fun AddScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("新增觀影紀錄") },
+                title = { Text("新增劇集") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Outlined.ArrowBack, contentDescription = "返回")
@@ -140,35 +144,35 @@ fun AddScreen(
                         }
                     }
                 } else {
-                        ExposedDropdownMenuBox(
+                    ExposedDropdownMenuBox(
+                        expanded = tagDropdownExpanded,
+                        onExpandedChange = { tagDropdownExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedTag,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tag") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = tagDropdownExpanded)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        ExposedDropdownMenu(
                             expanded = tagDropdownExpanded,
-                            onExpandedChange = { tagDropdownExpanded = it }
+                            onDismissRequest = { tagDropdownExpanded = false }
                         ) {
-                            OutlinedTextField(
-                                value = selectedTag,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Tag") },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = tagDropdownExpanded)
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = tagDropdownExpanded,
-                                onDismissRequest = { tagDropdownExpanded = false }
-                            ) {
-                                displayTags.forEach { tagName ->
-                                    DropdownMenuItem(
-                                        text = { Text(tagName) },
-                                        onClick = {
-                                            selectedTag = tagName
-                                            tagDropdownExpanded = false
-                                        }
-                                    )
-                                }
+                            displayTags.forEach { tagName ->
+                                DropdownMenuItem(
+                                    text = { Text(tagName) },
+                                    onClick = {
+                                        selectedTag = tagName
+                                        tagDropdownExpanded = false
+                                    }
+                                )
+                            }
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = {
@@ -192,7 +196,32 @@ fun AddScreen(
                 }
             }
 
-            // ── 演員（動態新增，最多五個）──
+            // ── 評分 ──
+            item {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("評分", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = if (grade == 0f) "未評分" else "%.1f".format(grade),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Slider(
+                        value = grade,
+                        onValueChange = { grade = it },
+                        valueRange = 0f..10f,
+                        steps = 99, // 0.1 步長
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // ── 演員 ──
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("演員", style = MaterialTheme.typography.bodyMedium)
@@ -214,8 +243,11 @@ fun AddScreen(
                                 IconButton(onClick = {
                                     actors = actors.toMutableList().also { it.removeAt(index) }
                                 }) {
-                                    Icon(Icons.Outlined.Close, contentDescription = "移除",
-                                        tint = MaterialTheme.colorScheme.error)
+                                    Icon(
+                                        Icons.Outlined.Close,
+                                        contentDescription = "移除",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
                                 }
                             }
                         }
@@ -225,48 +257,10 @@ fun AddScreen(
                             onClick = { actors = actors + "" },
                             modifier = Modifier.align(Alignment.Start)
                         ) {
-                            Icon(Icons.Outlined.Add, contentDescription = null,
-                                modifier = Modifier.size(16.dp))
+                            Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("新增演員")
                         }
-                    }
-                }
-            }
-
-            // ── 評分滑桿 ──
-            item {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "評分",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = if (grade == 0f) "未評分" else "%.1f".format(grade),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Slider(
-                        value = grade,
-                        onValueChange = { grade = it },
-                        valueRange = 0f..10f,
-                        steps = 99,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("0", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("10", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -283,13 +277,10 @@ fun AddScreen(
                 )
             }
 
-            // ── 連結（動態新增，最多三個）──
+            // ── 連結 ──
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "相關連結",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Text("相關連結", style = MaterialTheme.typography.bodyMedium)
                     links.forEachIndexed { index, link ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -311,7 +302,7 @@ fun AddScreen(
                                 }) {
                                     Icon(
                                         Icons.Outlined.Close,
-                                        contentDescription = "移除連結",
+                                        contentDescription = "移除",
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 }
@@ -323,11 +314,7 @@ fun AddScreen(
                             onClick = { links = links + "" },
                             modifier = Modifier.align(Alignment.Start)
                         ) {
-                            Icon(
-                                Icons.Outlined.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("新增連結")
                         }
@@ -335,7 +322,7 @@ fun AddScreen(
                 }
             }
 
-            // ── Public / Private toggle ──
+            // ── Public / Private ──
             item {
                 Row(
                     modifier = Modifier

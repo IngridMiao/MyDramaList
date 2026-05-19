@@ -71,6 +71,7 @@ class DramaViewModel : ViewModel() {
 
     fun fetchDrama(title: String, userId: Long) {
         viewModelScope.launch {
+            _currentDrama.value = null // Reset before fetch
             _isLoading.value = true
             try {
                 val response = repository.getDrama(title, userId)
@@ -90,6 +91,7 @@ class DramaViewModel : ViewModel() {
             try {
                 val response = repository.saveDrama(drama)
                 if (response.isSuccessful) {
+                    fetchDramas(drama.userId)
                     onComplete()
                 }
             } catch (e: Exception) {
@@ -103,6 +105,7 @@ class DramaViewModel : ViewModel() {
             try {
                 val response = repository.deleteDrama(title, userId)
                 if (response.isSuccessful) {
+                    fetchDramas(userId)
                     onComplete()
                 }
             } catch (e: Exception) {

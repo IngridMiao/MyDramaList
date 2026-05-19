@@ -31,7 +31,9 @@ fun DetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val backendTags by viewModel.tags.collectAsState()
     val commonTags = remember { dummyTags.filter { it != "全部" } }
-    val displayTags = (commonTags + backendTags.map { it.tagName }).distinct()
+    val displayTags = remember(backendTags) {
+        (commonTags + backendTags.map { it.tagName }).distinct()
+    }
 
     var isEditing by remember { mutableStateOf(false) }
 
@@ -106,9 +108,7 @@ fun DetailScreen(
                                 Icon(Icons.Outlined.Edit, contentDescription = "編輯")
                             }
                             IconButton(onClick = {
-                                viewModel.deleteDrama(title, userId) {
-                                    onBack()
-                                }
+                                showDeleteConfirmDialog = true
                             }) {
                                 Icon(Icons.Outlined.Delete, contentDescription = "刪除", tint = MaterialTheme.colorScheme.error)
                             }
@@ -480,4 +480,3 @@ private fun DetailRow(label: String, value: String) {
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
-

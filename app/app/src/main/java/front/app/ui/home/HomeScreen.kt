@@ -55,7 +55,9 @@ fun HomeScreen(
     var newTagInput by remember { mutableStateOf("") }
     val backendTags by viewModel.tags.collectAsState()
     val commonTags = remember { dummyTags.filter { it != "全部" } }
-    val displayTags = (commonTags + backendTags.map { it.tagName }).distinct()
+    val displayTags = remember(backendTags) {
+        (commonTags + backendTags.map { it.tagName }).distinct()
+    }
 
     val dramas by viewModel.dramas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
