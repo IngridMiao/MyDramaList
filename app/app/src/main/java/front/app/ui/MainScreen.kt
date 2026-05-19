@@ -18,7 +18,7 @@ import front.app.ui.home.HomeScreen
 import front.app.ui.profile.ProfileScreen
 import front.app.ui.theme.ThemeViewModel
 import front.app.ui.detail.DetailScreen
-import front.app.ui.home.dummyDramas
+
 
 @Composable
 fun MainScreen(

@@ -435,6 +435,30 @@ fun DetailScreen(
             }
         )
     }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("刪除劇集") },
+            text = { Text("是否要刪除「${dramaState?.title}」？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        viewModel.deleteDrama(title, userId) {
+                            onBack()
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("確認") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -448,3 +472,4 @@ private fun DetailRow(label: String, value: String) {
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
+

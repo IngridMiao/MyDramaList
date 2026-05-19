@@ -21,7 +21,12 @@ class LoginViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     _loginState.value = LoginResult.Success(response.body()!!)
                 } else {
-                    _loginState.value = LoginResult.Error("登入失敗: ${response.code()}")
+                    val message = when (response.code()) {
+                        404 -> "查無此帳號"
+                        401 -> "密碼錯誤"
+                        else -> "登入失敗: ${response.code()}"
+                    }
+                    _loginState.value = LoginResult.Error(message)
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginResult.Error("發生錯誤: ${e.message}")
@@ -36,7 +41,12 @@ class LoginViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     _loginState.value = LoginResult.Success(response.body()!!)
                 } else {
-                    _loginState.value = LoginResult.Error("註冊失敗: ${response.code()}")
+                    val message = when (response.code()) {
+                        409 -> "此帳號已存在"
+                        400 -> "註冊資料不完整"
+                        else -> "註冊失敗: ${response.code()}"
+                    }
+                    _loginState.value = LoginResult.Error(message)
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginResult.Error("發生錯誤: ${e.message}")

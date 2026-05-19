@@ -37,16 +37,37 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createOrUpdateUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.saveUser(user));
+    public ResponseEntity<?> createOrUpdateUser(@RequestBody User user) {
+        System.out.println("Registering user: " + user.getUserName());
+        if (user.getUserName() == null || user.getUserName().isEmpty()) {
+            return ResponseEntity.badRequest().body("帳號不能為空");
+        }
+        // 檢查帳號是否已存在
+        if (userService.getUserByUserName(user.getUserName()).isPresent()) {
+            return ResponseEntity.status(409).body("帳號已存在");
+        }
+        User savedUser = userService.saveUser(user);
+        System.out.println("User saved with ID: " + savedUser.getId());
+        return ResponseEntity.ok(savedUser);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody User user) {
+        System.out.println("Login attempt: " + user.getUserName());
         return userService.getUserByUserName(user.getUserName())
-                .filter(u -> u.getPassword() != null && u.getPassword().equals(user.getPassword()))
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(401).build());
+                .map(u -> {
+                    if (u.getPassword() != null && u.getPassword().equals(user.getPassword())) {
+                        System.out.println("Login successful: " + user.getUserName());
+                        return ResponseEntity.ok(u);
+                    } else {
+                        System.out.println("Login failed: Incorrect password for " + user.getUserName());
+                        return ResponseEntity.status(401).body("密碼錯誤");
+                    }
+                })
+                .orElseGet(() -> {
+                    System.out.println("Login failed: User not found: " + user.getUserName());
+                    return ResponseEntity.status(404).body("查無此帳號");
+                });
     }
 
     @DeleteMapping("/{id}")
