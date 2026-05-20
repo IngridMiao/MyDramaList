@@ -63,13 +63,14 @@ fun AddScreen(
                 actions = {
                     TextButton(
                         onClick = {
+                            val roundedGrade = if (grade == 0f) null else (Math.round(grade * 10) / 10f)
                             val drama = Drama(
                                 title = title,
                                 userId = userId,
                                 actors = actors.filter { it.isNotBlank() }.joinToString(","),
                                 tag = selectedTag,
                                 shown = shown,
-                                grade = if (grade == 0f) null else grade,
+                                grade = roundedGrade,
                                 viewPoint = viewPoint,
                                 link1 = links.getOrNull(0),
                                 link2 = links.getOrNull(1),

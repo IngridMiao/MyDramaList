@@ -85,13 +85,14 @@ fun DetailScreen(
                         if (isEditing) {
                             TextButton(
                                 onClick = {
+                                    val roundedGrade = if (editGrade == 0f) null else (Math.round(editGrade * 10) / 10f)
                                     val updatedDrama = Drama(
                                         title = editTitle,
                                         userId = userId,
                                         actors = editActors.filter { it.isNotBlank() }.joinToString(","),
                                         tag = editSelectedTag,
                                         shown = editShown,
-                                        grade = if (editGrade == 0f) null else editGrade,
+                                        grade = roundedGrade,
                                         viewPoint = editViewPoint,
                                         link1 = editLinks.getOrNull(0),
                                         link2 = editLinks.getOrNull(1),
