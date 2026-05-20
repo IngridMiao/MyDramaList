@@ -404,13 +404,14 @@ fun DetailScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = (if (drama.shown) Color(0xFF2196F3)
-                                else Color(0xFF9C27B0)).copy(alpha = 0.12f)
+                                color = (if (drama.shown) MaterialTheme.colorScheme.secondary
+                                else Color.Gray).copy(alpha = 0.15f),
+                                border = androidx.compose.foundation.BorderStroke(0.5.dp, (if (drama.shown) MaterialTheme.colorScheme.secondary else Color.Gray).copy(alpha = 0.5f))
                             ) {
                                 Text(
                                     text = if (drama.shown) "public" else "private",
-                                    color = if (drama.shown) Color(0xFF2196F3) else Color(0xFF9C27B0),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (drama.shown) MaterialTheme.colorScheme.secondary else Color.Gray,
+                                    style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                 )
                             }

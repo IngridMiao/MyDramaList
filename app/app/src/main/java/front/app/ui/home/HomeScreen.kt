@@ -24,6 +24,7 @@ import front.app.viewmodel.DramaViewModel
 // TODO: 之後換成從 ViewModel 取得的真實資料
 val dummyTags = listOf("全部", "刑偵", "愛情", "懸疑", "古裝", "科幻")
 
+
 enum class SortType(val label: String) {
     ADDED_TIME("觀看時間"),
     GRADE("評級")
@@ -393,7 +394,7 @@ fun DramaCard(
                     Icon(
                         Icons.Outlined.Star,
                         contentDescription = null,
-                        tint = Color(0xFFFFC107),
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(Modifier.width(2.dp))
@@ -420,12 +421,12 @@ fun DramaCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     drama.tag?.split(",")?.filter { it.isNotBlank() }?.forEach { tag ->
-                        FilterBadge(label = tag, color = Color(0xFF4CAF50))
+                        FilterBadge(label = tag, color = MaterialTheme.colorScheme.secondary)
                     }
                     if (showShown) {
                         FilterBadge(
                             label = if (drama.shown) "public" else "private",
-                            color = if (drama.shown) Color(0xFF2196F3) else Color(0xFF9C27B0)
+                            color = if (drama.shown) MaterialTheme.colorScheme.secondary else Color.Gray
                         )
                     }
                 }
@@ -438,13 +439,14 @@ fun DramaCard(
 fun FilterBadge(label: String, color: Color) {
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = color.copy(alpha = 0.12f)
+        color = color.copy(alpha = 0.15f),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, color.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = label, fontSize = 11.sp, color = color)
+            Text(text = label, fontSize = 10.sp, color = color, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
         }
     }
 }

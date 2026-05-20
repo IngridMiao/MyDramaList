@@ -10,6 +10,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import front.app.ui.MainScreen
@@ -17,6 +19,25 @@ import front.app.ui.login.LoginScreen
 import front.app.ui.theme.AppTheme
 import front.app.ui.theme.FontSize
 import front.app.ui.theme.ThemeViewModel
+
+// 先在 class 外面或頂部定義兩組 Color
+private val LightPrimary = Color(0xFF185FA5)
+private val LightOnPrimary = Color(0xFFFFFFFF)
+private val LightSecondary = Color(0xFFBA7517)
+private val LightOnSecondary = Color(0xFFFFFFFF)
+private val LightBackground = Color(0xFFF4F3EF)
+private val LightOnBackground = Color(0xFF1A1A18)
+private val LightSurface = Color(0xFFFFFFFF)
+private val LightOnSurface = Color(0xFF1A1A18)
+
+private val DarkPrimary = Color(0xFF85B7EB)
+private val DarkOnPrimary = Color(0xFF042C53)
+private val DarkSecondary = Color(0xFFEF9F27)
+private val DarkOnSecondary = Color(0xFF412402)
+private val DarkBackground = Color(0xFF14151A)
+private val DarkOnBackground = Color(0xFFE8E7E2)
+private val DarkSurface = Color(0xFF1E2028)
+private val DarkOnSurface = Color(0xFFE8E7E2)
 
 class MainActivity : ComponentActivity() {
 
@@ -35,10 +56,34 @@ class MainActivity : ComponentActivity() {
                 AppTheme.DARK -> true
             }
 
+            val colorScheme = if (isDark) {
+                darkColorScheme(
+                    primary = DarkPrimary,
+                    onPrimary = DarkOnPrimary,
+                    secondary = DarkSecondary,
+                    onSecondary = DarkOnSecondary,
+                    background = DarkBackground,
+                    onBackground = DarkOnBackground,
+                    surface = DarkSurface,
+                    onSurface = DarkOnSurface
+                )
+            } else {
+                lightColorScheme(
+                    primary = LightPrimary,
+                    onPrimary = LightOnPrimary,
+                    secondary = LightSecondary,
+                    onSecondary = LightOnSecondary,
+                    background = LightBackground,
+                    onBackground = LightOnBackground,
+                    surface = LightSurface,
+                    onSurface = LightOnSurface
+                )
+            }
+
             val typography = buildTypography(currentFontSize.scale)
 
             MaterialTheme(
-                colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+                colorScheme = colorScheme,
                 typography = typography
             ) {
                 var isLoggedIn by remember { mutableStateOf(false) }
