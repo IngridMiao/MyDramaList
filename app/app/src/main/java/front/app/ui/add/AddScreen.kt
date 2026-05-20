@@ -1,13 +1,14 @@
 package front.app.ui.add
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,7 +21,7 @@ import front.app.model.Tag
 import front.app.ui.home.dummyTags
 import front.app.viewmodel.DramaViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddScreen(
     userId: Long,
@@ -42,10 +43,8 @@ fun AddScreen(
         (commonTags + backendTags.map { it.tagName }).distinct()
     }
 
-    var selectedTag by remember { mutableStateOf("") }
-    var tagDropdownExpanded by remember { mutableStateOf(false) }
-    var showAddTagDialog by remember { mutableStateOf(false) }
-    var newTagInput by remember { mutableStateOf("") }
+    var selectedTags by remember { mutableStateOf(setOf<String>()) }
+    var showTagSelectDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         viewModel.fetchTags(userId)
@@ -68,7 +67,7 @@ fun AddScreen(
                                 title = title,
                                 userId = userId,
                                 actors = actors.filter { it.isNotBlank() }.joinToString(","),
-                                tag = selectedTag,
+                                tag = if (selectedTags.isEmpty()) null else selectedTags.joinToString(","),
                                 shown = shown,
                                 grade = roundedGrade,
                                 viewPoint = viewPoint,
@@ -109,90 +108,34 @@ fun AddScreen(
 
             // ── Tag ──
             item {
-                if (showAddTagDialog) {
-                    Row(
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Tag", style = MaterialTheme.typography.bodyMedium)
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedTextField(
-                            value = newTagInput,
-                            onValueChange = { newTagInput = it },
-                            label = { Text("新增 Tag") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                        TextButton(onClick = {
-                            showAddTagDialog = false
-                            newTagInput = ""
-                        }) {
-                            Text("取消")
-                        }
-                        Button(
-                            onClick = {
-                                if (newTagInput.isNotBlank()) {
-                                    if (displayTags.none { it == newTagInput }) {
-                                        viewModel.saveTag(Tag(userId = userId, tagName = newTagInput))
-                                    }
-                                    selectedTag = newTagInput
-                                }
-                                showAddTagDialog = false
-                                newTagInput = ""
-                            },
-                            enabled = newTagInput.isNotBlank()
-                        ) {
-                            Text("確認")
-                        }
-                    }
-                } else {
-                    ExposedDropdownMenuBox(
-                        expanded = tagDropdownExpanded,
-                        onExpandedChange = { tagDropdownExpanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedTag,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Tag") },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = tagDropdownExpanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = tagDropdownExpanded,
-                            onDismissRequest = { tagDropdownExpanded = false }
-                        ) {
-                            displayTags.forEach { tagName ->
-                                DropdownMenuItem(
-                                    text = { Text(tagName) },
-                                    onClick = {
-                                        selectedTag = tagName
-                                        tagDropdownExpanded = false
-                                    }
-                                )
-                            }
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Outlined.Add,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("新增 tag")
-                                    }
-                                },
-                                onClick = {
-                                    tagDropdownExpanded = false
-                                    showAddTagDialog = true
+                        selectedTags.forEach { tagName ->
+                            InputChip(
+                                selected = true,
+                                onClick = { selectedTags = selectedTags - tagName },
+                                label = { Text(tagName) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Close,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                 }
                             )
                         }
+                        AssistChip(
+                            onClick = { showTagSelectDialog = true },
+                            label = { Text("選擇 / 新增 Tag") },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        )
                     }
                 }
             }
@@ -350,4 +293,127 @@ fun AddScreen(
             item { Spacer(Modifier.height(60.dp)) }
         }
     }
+
+    if (showTagSelectDialog) {
+        TagSelectDialog(
+            allTags = displayTags,
+            selectedTags = selectedTags,
+            onDismiss = { showTagSelectDialog = false },
+            onConfirm = { 
+                selectedTags = it
+                showTagSelectDialog = false
+            },
+            onAddNewTag = { tagName ->
+                if (displayTags.none { it == tagName }) {
+                    viewModel.saveTag(Tag(userId = userId, tagName = tagName))
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TagSelectDialog(
+    allTags: List<String>,
+    selectedTags: Set<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (Set<String>) -> Unit,
+    onAddNewTag: (String) -> Unit
+) {
+    var tempSelected by remember { mutableStateOf(selectedTags) }
+    var newTagInput by remember { mutableStateOf("") }
+    var isAddingNew by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("選擇 Tag") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+            ) {
+                if (isAddingNew) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = newTagInput,
+                            onValueChange = { newTagInput = it },
+                            label = { Text("新 Tag") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        IconButton(onClick = {
+                            if (newTagInput.isNotBlank()) {
+                                val trimmedTag = newTagInput.trim()
+                                onAddNewTag(trimmedTag)
+                                tempSelected = tempSelected + trimmedTag
+                                newTagInput = ""
+                                isAddingNew = false
+                            }
+                        }) {
+                            Icon(Icons.Outlined.Check, contentDescription = "確認")
+                        }
+                        IconButton(onClick = { isAddingNew = false }) {
+                            Icon(Icons.Outlined.Close, contentDescription = "取消")
+                        }
+                    }
+                } else {
+                    TextButton(onClick = { isAddingNew = true }) {
+                        Icon(Icons.Outlined.Add, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("新增自定義 Tag")
+                    }
+                }
+                
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(8.dp))
+
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    allTags.forEach { tag ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    tempSelected = if (tag in tempSelected) {
+                                        tempSelected - tag
+                                    } else {
+                                        tempSelected + tag
+                                    }
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Checkbox(
+                                checked = tag in tempSelected,
+                                onCheckedChange = { checked ->
+                                    tempSelected = if (checked) {
+                                        tempSelected + tag
+                                    } else {
+                                        tempSelected - tag
+                                    }
+                                }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(tag)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(tempSelected) }) {
+                Text("確定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }

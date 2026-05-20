@@ -1,9 +1,12 @@
 package front.app.ui.detail
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -11,15 +14,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.Drama
 import front.app.model.Tag
+import front.app.ui.add.TagSelectDialog
 import front.app.ui.home.dummyTags
 import front.app.viewmodel.DramaViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DetailScreen(
     title: String,
@@ -27,6 +33,7 @@ fun DetailScreen(
     onBack: () -> Unit = {},
     viewModel: DramaViewModel = viewModel()
 ) {
+    val uriHandler = LocalUriHandler.current
     val dramaState by viewModel.currentDrama.collectAsState()
     val isDetailLoading by viewModel.isDetailLoading.collectAsState()
     val hasFetchedDetail by viewModel.hasFetchedDetail.collectAsState()
@@ -45,10 +52,9 @@ fun DetailScreen(
     var editShown by remember { mutableStateOf(true) }
     var editLinks by remember { mutableStateOf(listOf("")) }
     var editActors by remember { mutableStateOf(listOf("")) }
-    var editSelectedTag by remember { mutableStateOf("") }
+    var editSelectedTags by remember { mutableStateOf(setOf<String>()) }
 
-    var tagDropdownExpanded by remember { mutableStateOf(false) }
-    var showAddTagDialog by remember { mutableStateOf(false) }
+    var showTagSelectDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var newTagInput by remember { mutableStateOf("") }
 
@@ -65,7 +71,7 @@ fun DetailScreen(
             editShown = drama.shown
             editLinks = listOfNotNull(drama.link1, drama.link2, drama.link3).ifEmpty { listOf("") }
             editActors = drama.actors?.split(",")?.filter { it.isNotBlank() }?.ifEmpty { listOf("") } ?: listOf("")
-            editSelectedTag = drama.tag ?: ""
+            editSelectedTags = drama.tag?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
         }
     }
 
@@ -90,7 +96,7 @@ fun DetailScreen(
                                         title = editTitle,
                                         userId = userId,
                                         actors = editActors.filter { it.isNotBlank() }.joinToString(","),
-                                        tag = editSelectedTag,
+                                        tag = if (editSelectedTags.isEmpty()) null else editSelectedTags.joinToString(","),
                                         shown = editShown,
                                         grade = roundedGrade,
                                         viewPoint = editViewPoint,
@@ -156,91 +162,38 @@ fun DetailScreen(
                 // ── Tag ──
                 item {
                     if (isEditing) {
-                        if (showAddTagDialog) {
-                            Row(
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Tag", style = MaterialTheme.typography.bodyMedium)
+                            FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                OutlinedTextField(
-                                    value = newTagInput,
-                                    onValueChange = { newTagInput = it },
-                                    label = { Text("新增 Tag") },
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                                TextButton(onClick = {
-                                    showAddTagDialog = false
-                                    newTagInput = ""
-                                }) {
-                                    Text("取消")
-                                }
-                                Button(
-                                    onClick = {
-                                        if (newTagInput.isNotBlank()) {
-                                            if (displayTags.none { it == newTagInput }) {
-                                                viewModel.saveTag(Tag(userId = userId, tagName = newTagInput))
-                                            }
-                                            editSelectedTag = newTagInput
-                                        }
-                                        showAddTagDialog = false
-                                        newTagInput = ""
-                                    },
-                                    enabled = newTagInput.isNotBlank()
-                                ) {
-                                    Text("確認")
-                                }
-                            }
-                        } else {
-                            ExposedDropdownMenuBox(
-                                expanded = tagDropdownExpanded,
-                                onExpandedChange = { tagDropdownExpanded = it }
-                            ) {
-                                OutlinedTextField(
-                                    value = editSelectedTag,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Tag") },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = tagDropdownExpanded)
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .menuAnchor()
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = tagDropdownExpanded,
-                                    onDismissRequest = { tagDropdownExpanded = false }
-                                ) {
-                                    displayTags.forEach { tagName ->
-                                        DropdownMenuItem(
-                                            text = { Text(tagName) },
-                                            onClick = {
-                                                editSelectedTag = tagName
-                                                tagDropdownExpanded = false
-                                            }
-                                        )
-                                    }
-                                    HorizontalDivider()
-                                    DropdownMenuItem(
-                                        text = {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Outlined.Add, contentDescription = null,
-                                                    modifier = Modifier.size(16.dp))
-                                                Spacer(Modifier.width(4.dp))
-                                                Text("新增 tag")
-                                            }
-                                        },
-                                        onClick = {
-                                            tagDropdownExpanded = false
-                                            showAddTagDialog = true
+                                editSelectedTags.forEach { tagName ->
+                                    InputChip(
+                                        selected = true,
+                                        onClick = { editSelectedTags = editSelectedTags - tagName },
+                                        label = { Text(tagName) },
+                                        trailingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Close,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
                                         }
                                     )
                                 }
+                                AssistChip(
+                                    onClick = { showTagSelectDialog = true },
+                                    label = { Text("選擇 / 新增 Tag") },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    }
+                                )
                             }
                         }
                     } else {
-                        DetailRow(label = "Tag", value = drama.tag ?: "—")
+                        DetailRow(label = "Tag", value = drama.tag?.replace(",", "、") ?: "—")
                     }
                 }
 
@@ -392,11 +345,35 @@ fun DetailScreen(
                                 Text("—", style = MaterialTheme.typography.bodyMedium)
                             } else {
                                 links.forEach { link ->
-                                    Text(
-                                        text = link,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                try {
+                                                    val url = if (link.startsWith("http")) link else "https://$link"
+                                                    uriHandler.openUri(url)
+                                                } catch (e: Exception) {
+                                                    // ignore or show error
+                                                }
+                                            }
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.OpenInNew,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = link,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -465,6 +442,23 @@ fun DetailScreen(
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
                     Text("取消")
+                }
+            }
+        )
+    }
+
+    if (showTagSelectDialog) {
+        TagSelectDialog(
+            allTags = displayTags,
+            selectedTags = editSelectedTags,
+            onDismiss = { showTagSelectDialog = false },
+            onConfirm = {
+                editSelectedTags = it
+                showTagSelectDialog = false
+            },
+            onAddNewTag = { tagName ->
+                if (displayTags.none { it == tagName }) {
+                    viewModel.saveTag(Tag(userId = userId, tagName = tagName))
                 }
             }
         )

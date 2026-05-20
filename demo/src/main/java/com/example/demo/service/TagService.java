@@ -23,4 +23,20 @@ public class TagService {
         }
         return tagRepository.save(tag);
     }
+
+    public void updateTags(Long userId, String tagString) {
+        if (tagString == null || tagString.isEmpty()) return;
+        String[] tags = tagString.split(",");
+        for (String tagName : tags) {
+            String trimmed = tagName.trim();
+            if (!trimmed.isEmpty()) {
+                if (!tagRepository.existsByUserIdAndTagName(userId, trimmed)) {
+                    Tag newTag = new Tag();
+                    newTag.setUserId(userId);
+                    newTag.setTagName(trimmed);
+                    tagRepository.save(newTag);
+                }
+            }
+        }
+    }
 }

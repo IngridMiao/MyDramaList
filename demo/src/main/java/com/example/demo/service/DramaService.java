@@ -16,6 +16,9 @@ public class DramaService {
     @Autowired
     private DramaRepository dramaRepository;
 
+    @Autowired
+    private TagService tagService;
+
     public List<Drama> getDramasByUserId(Long userId) {
         return dramaRepository.findByUserId(userId);
     }
@@ -29,6 +32,7 @@ public class DramaService {
     }
 
     public Drama saveDrama(Drama drama) {
+        tagService.updateTags(drama.getUserId(), drama.getTag());
         return dramaRepository.save(drama);
     }
 

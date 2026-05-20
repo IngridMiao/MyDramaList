@@ -75,7 +75,11 @@ fun HomeScreen(
                         (drama.actors ?: "").contains(searchQuery, ignoreCase = true)
             }
             .filter { drama ->
-                selectedTags.isEmpty() || selectedTags.contains(drama.tag)
+                if (selectedTags.isEmpty()) true
+                else {
+                    val dramaTags = drama.tag?.split(",")?.map { it.trim() }?.toSet() ?: emptySet()
+                    selectedTags.any { it in dramaTags }
+                }
             }
             .filter { drama ->
                 when (shownFilter) {
@@ -362,6 +366,7 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DramaCard(
     drama: Drama,
@@ -408,11 +413,14 @@ fun DramaCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if ((showTag && drama.tag != null) || showShown) {
+            if (drama.tag != null || showShown) {
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (showTag && drama.tag != null) {
-                        FilterBadge(label = drama.tag!!, color = Color(0xFF4CAF50))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    drama.tag?.split(",")?.filter { it.isNotBlank() }?.forEach { tag ->
+                        FilterBadge(label = tag, color = Color(0xFF4CAF50))
                     }
                     if (showShown) {
                         FilterBadge(
@@ -436,13 +444,6 @@ fun FilterBadge(label: String, color: Color) {
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Outlined.Check,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(12.dp)
-            )
-            Spacer(Modifier.width(3.dp))
             Text(text = label, fontSize = 11.sp, color = color)
         }
     }
