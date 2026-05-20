@@ -20,24 +20,29 @@ import front.app.ui.theme.AppTheme
 import front.app.ui.theme.FontSize
 import front.app.ui.theme.ThemeViewModel
 
-// 先在 class 外面或頂部定義兩組 Color
-private val LightPrimary = Color(0xFF185FA5)
-private val LightOnPrimary = Color(0xFFFFFFFF)
-private val LightSecondary = Color(0xFFBA7517)
-private val LightOnSecondary = Color(0xFFFFFFFF)
-private val LightBackground = Color(0xFFF4F3EF)
-private val LightOnBackground = Color(0xFF1A1A18)
-private val LightSurface = Color(0xFFFFFFFF)
-private val LightOnSurface = Color(0xFF1A1A18)
-
-private val DarkPrimary = Color(0xFF85B7EB)
-private val DarkOnPrimary = Color(0xFF042C53)
-private val DarkSecondary = Color(0xFFEF9F27)
-private val DarkOnSecondary = Color(0xFF412402)
-private val DarkBackground = Color(0xFF14151A)
-private val DarkOnBackground = Color(0xFFE8E7E2)
-private val DarkSurface = Color(0xFF1E2028)
-private val DarkOnSurface = Color(0xFFE8E7E2)
+// ── 淺色主題色票 ──────────────────────────────────────────
+private val LightPrimary         = Color(0xFF185FA5)
+private val LightOnPrimary       = Color(0xFFFFFFFF)
+private val LightSecondary       = Color(0xFFBA7517)
+private val LightOnSecondary     = Color(0xFFFFFFFF)
+private val LightBackground      = Color(0xFFF4F3EF)
+private val LightOnBackground    = Color(0xFF1A1A18)
+private val LightSurface         = Color(0xFFFFFFFF)
+private val LightOnSurface       = Color(0xFF1A1A18)
+private val LightSurfaceVariant  = Color(0xFFECEAE4)
+private val LightOnSurfaceVariant= Color(0xFF5F5E5A)
+ 
+// ── 深色主題色票 ──────────────────────────────────────────
+private val DarkPrimary          = Color(0xFF85B7EB)
+private val DarkOnPrimary        = Color(0xFF042C53)
+private val DarkSecondary        = Color(0xFFEF9F27)
+private val DarkOnSecondary      = Color(0xFF412402)
+private val DarkBackground       = Color(0xFF14151A)
+private val DarkOnBackground     = Color(0xFFE8E7E2)
+private val DarkSurface          = Color(0xFF1E2028)
+private val DarkOnSurface        = Color(0xFFE8E7E2)
+private val DarkSurfaceVariant   = Color(0xFF282C36)
+private val DarkOnSurfaceVariant = Color(0xFFA0A098)
 
 class MainActivity : ComponentActivity() {
 
@@ -65,7 +70,9 @@ class MainActivity : ComponentActivity() {
                     background = DarkBackground,
                     onBackground = DarkOnBackground,
                     surface = DarkSurface,
-                    onSurface = DarkOnSurface
+                    onSurface = DarkOnSurface,
+                    surfaceVariant = DarkSurfaceVariant,
+                    onSurfaceVariant = DarkOnSurfaceVariant
                 )
             } else {
                 lightColorScheme(
@@ -76,7 +83,9 @@ class MainActivity : ComponentActivity() {
                     background = LightBackground,
                     onBackground = LightOnBackground,
                     surface = LightSurface,
-                    onSurface = LightOnSurface
+                    onSurface = LightOnSurface,
+                    surfaceVariant = LightSurfaceVariant,
+                    onSurfaceVariant = LightOnSurfaceVariant
                 )
             }
 

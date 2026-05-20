@@ -3,6 +3,7 @@ package front.app.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import front.app.model.Drama
+import front.app.model.DramaResponse
 import front.app.model.Tag
 import front.app.repository.DramaRepository
 import front.app.repository.TagRepository
@@ -16,6 +17,9 @@ class DramaViewModel : ViewModel() {
 
     private val _dramas = MutableStateFlow<List<Drama>>(emptyList())
     val dramas = _dramas.asStateFlow()
+
+    private val _publicDramas = MutableStateFlow<List<DramaResponse>>(emptyList())
+    val publicDramas = _publicDramas.asStateFlow()
 
     private val _tags = MutableStateFlow<List<Tag>>(emptyList())
     val tags = _tags.asStateFlow()
@@ -39,6 +43,22 @@ class DramaViewModel : ViewModel() {
                 val response = repository.getDramas(userId)
                 if (response.isSuccessful) {
                     _dramas.value = response.body() ?: emptyList()
+                }
+            } catch (e: Exception) {
+                // Error handling
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun fetchPublicDramas() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = repository.getPublicDramas()
+                if (response.isSuccessful) {
+                    _publicDramas.value = response.body() ?: emptyList()
                 }
             } catch (e: Exception) {
                 // Error handling

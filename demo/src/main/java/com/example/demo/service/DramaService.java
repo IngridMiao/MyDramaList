@@ -9,12 +9,16 @@ import org.springframework.stereotype.Service;
 import com.example.demo.entity.Drama;
 import com.example.demo.entity.DramaId;
 import com.example.demo.repository.DramaRepository;
+import com.example.demo.repository.UserRepository;
 
 @Service
 public class DramaService {
 
     @Autowired
     private DramaRepository dramaRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private TagService tagService;
@@ -25,6 +29,28 @@ public class DramaService {
 
     public List<Drama> getDramasByShown(Long userId, boolean shown) {
         return dramaRepository.findByUserIdAndShown(userId, shown);
+    }
+
+    public List<com.example.demo.dto.DramaResponse> getAllPublicDramas() {
+        List<Drama> dramas = dramaRepository.findByShown(true);
+        return dramas.stream().map(drama -> {
+            String userName = userRepository.findById(drama.getUserId())
+                    .map(com.example.demo.entity.User::getUserName)
+                    .orElse("Unknown");
+            return new com.example.demo.dto.DramaResponse(
+                    drama.getTitle(),
+                    drama.getUserId(),
+                    userName,
+                    drama.getActors(),
+                    drama.getTag(),
+                    drama.isShown(),
+                    drama.getGrade(),
+                    drama.getViewPoint(),
+                    drama.getLink1(),
+                    drama.getLink2(),
+                    drama.getLink3()
+            );
+        }).collect(java.util.stream.Collectors.toList());
     }
 
     public Optional<Drama> getDramaById(String title, Long userId) {

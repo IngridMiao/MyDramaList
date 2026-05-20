@@ -63,7 +63,7 @@ fun MainScreen(
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("friend") { FriendScreen() }
+            composable("friend") { FriendScreen(viewModel = dramaViewModel) }
             composable("home") {
                 HomeScreen(
                     userId = userId,

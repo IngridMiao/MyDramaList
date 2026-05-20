@@ -1,6 +1,7 @@
 package front.app.network
 
 import front.app.model.Drama
+import front.app.model.DramaResponse
 import front.app.model.Tag
 import front.app.model.User
 import retrofit2.Response
@@ -25,6 +26,9 @@ interface ApiService {
     suspend fun saveTag(@Body tag: Tag): Response<Tag>
 
     // Drama APIs
+    @GET("api/dramas/public")
+    suspend fun getPublicDramas(): Response<List<DramaResponse>>
+
     @GET("api/dramas")
     suspend fun getDramas(
         @Query("userId") userId: Long,

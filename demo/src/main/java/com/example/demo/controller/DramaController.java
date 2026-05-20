@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.Drama;
 import com.example.demo.service.DramaService;
+import com.example.demo.dto.DramaResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,11 @@ public class DramaController {
 
     @Autowired
     private DramaService dramaService;
+
+    @GetMapping("/public")
+    public ResponseEntity<List<DramaResponse>> getPublicDramas() {
+        return ResponseEntity.ok(dramaService.getAllPublicDramas());
+    }
 
     @GetMapping
     public ResponseEntity<List<Drama>> getAllDramas(
