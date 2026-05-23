@@ -21,50 +21,50 @@ import front.app.ui.theme.FontSize
 import front.app.ui.theme.ThemeViewModel
 
 // ── 淺色主題色票 ──────────────────────────────────────────
-private val LightPrimary         = Color(0xFF185FA5) // 藍色
+private val LightPrimary         = Color(0xFF3B82F6) // Modern Blue
 private val LightOnPrimary       = Color(0xFFFFFFFF)
-private val LightPrimaryContainer  = Color(0xFFD1E4FF)
-private val LightOnPrimaryContainer= Color(0xFF001D36)
+private val LightPrimaryContainer  = Color(0xFFDBEAFE)
+private val LightOnPrimaryContainer= Color(0xFF1E3A8A)
 
-private val LightSecondary       = Color(0xFFBA7517) // 橘色
+private val LightSecondary       = Color(0xFF06B6D4) // Cyan
 private val LightOnSecondary     = Color(0xFFFFFFFF)
-private val LightSecondaryContainer = Color(0xFFFFDDB1)
-private val LightOnSecondaryContainer = Color(0xFF291800)
+private val LightSecondaryContainer = Color(0xFFCFFAFE)
+private val LightOnSecondaryContainer = Color(0xFF083344)
 
-private val LightTertiary        = Color(0xFF185FA5) // 暫時用 Primary 同色調避免紫色
+private val LightTertiary        = Color(0xFF3B82F6)
 private val LightOnTertiary      = Color(0xFFFFFFFF)
-private val LightTertiaryContainer = Color(0xFFD1E4FF)
-private val LightOnTertiaryContainer = Color(0xFF001D36)
+private val LightTertiaryContainer = Color(0xFFDBEAFE)
+private val LightOnTertiaryContainer = Color(0xFF1E3A8A)
 
-private val LightBackground      = Color(0xFFF4F3EF)
-private val LightOnBackground    = Color(0xFF1A1A18)
-private val LightSurface         = Color(0xFFFFFFFF)
-private val LightOnSurface       = Color(0xFF1A1A18)
-private val LightSurfaceVariant  = Color(0xFFECEAE4)
-private val LightOnSurfaceVariant= Color(0xFF5F5E5A)
+private val LightBackground      = Color(0xFFF8FAFC) // Slate 50 (乾淨俐落的淺灰白)
+private val LightOnBackground    = Color(0xFF0F172A)
+private val LightSurface         = Color(0xFFF8FAFC)
+private val LightOnSurface       = Color(0xFF0F172A)
+private val LightSurfaceVariant  = Color(0xFFE2E8F0)
+private val LightOnSurfaceVariant= Color(0xFF475569)
  
 // ── 深色主題色票 ──────────────────────────────────────────
-private val DarkPrimary          = Color(0xFF85B7EB)
-private val DarkOnPrimary        = Color(0xFF042C53)
-private val DarkPrimaryContainer = Color(0xFF004975)
-private val DarkOnPrimaryContainer= Color(0xFFD1E4FF)
+private val DarkPrimary          = Color(0xFF60A5FA) // 稍微調亮的藍色確保對比
+private val DarkOnPrimary        = Color(0xFF003362)
+private val DarkPrimaryContainer = Color(0xFF1E3A8A)
+private val DarkOnPrimaryContainer= Color(0xFFDBEAFE)
 
-private val DarkSecondary        = Color(0xFFEF9F27)
-private val DarkOnSecondary      = Color(0xFF412402)
-private val DarkSecondaryContainer = Color(0xFF5A3B00)
-private val DarkOnSecondaryContainer = Color(0xFFFFDDB1)
+private val DarkSecondary        = Color(0xFF22D3EE) // 稍微調亮的青色
+private val DarkOnSecondary      = Color(0xFF00363D)
+private val DarkSecondaryContainer = Color(0xFF083344)
+private val DarkOnSecondaryContainer = Color(0xFFCFFAFE)
 
-private val DarkTertiary         = Color(0xFF85B7EB)
-private val DarkOnTertiary       = Color(0xFF042C53)
-private val DarkTertiaryContainer  = Color(0xFF004975)
-private val DarkOnTertiaryContainer= Color(0xFFD1E4FF)
+private val DarkTertiary         = Color(0xFF60A5FA)
+private val DarkOnTertiary       = Color(0xFF003362)
+private val DarkTertiaryContainer  = Color(0xFF1E3A8A)
+private val DarkOnTertiaryContainer= Color(0xFFDBEAFE)
 
-private val DarkBackground       = Color(0xFF14151A)
-private val DarkOnBackground     = Color(0xFFE8E7E2)
-private val DarkSurface          = Color(0xFF1E2028)
-private val DarkOnSurface        = Color(0xFFE8E7E2)
-private val DarkSurfaceVariant   = Color(0xFF282C36)
-private val DarkOnSurfaceVariant = Color(0xFFA0A098)
+private val DarkBackground       = Color(0xFF0A0F1E) // 深海藍黑
+private val DarkOnBackground     = Color(0xFFF1F5F9)
+private val DarkSurface          = Color(0xFF0A0F1E)
+private val DarkOnSurface        = Color(0xFFF1F5F9)
+private val DarkSurfaceVariant   = Color(0xFF1E293B)
+private val DarkOnSurfaceVariant = Color(0xFF94A3B8)
 
 class MainActivity : ComponentActivity() {
 
@@ -103,11 +103,11 @@ class MainActivity : ComponentActivity() {
                     onSurface = DarkOnSurface,
                     surfaceVariant = DarkSurfaceVariant,
                     onSurfaceVariant = DarkOnSurfaceVariant,
-                    surfaceContainer = Color(0xFF1E2028),
-                    surfaceContainerLow = Color(0xFF191C23),
-                    surfaceContainerLowest = Color(0xFF0C0F16),
-                    surfaceContainerHigh = Color(0xFF282A33),
-                    surfaceContainerHighest = Color(0xFF33353E)
+                    surfaceContainer = Color(0xFF0A0F1E),
+                    surfaceContainerLow = Color(0xFF0A0F1E),
+                    surfaceContainerLowest = Color(0xFF000000),
+                    surfaceContainerHigh = Color(0xFF161C2C),
+                    surfaceContainerHighest = Color(0xFF21283A)
                 )
             } else {
                 lightColorScheme(
@@ -129,11 +129,11 @@ class MainActivity : ComponentActivity() {
                     onSurface = LightOnSurface,
                     surfaceVariant = LightSurfaceVariant,
                     onSurfaceVariant = LightOnSurfaceVariant,
-                    surfaceContainer = Color(0xFFF4F3EF),       // 修改: 與 Background 一致
-                    surfaceContainerLow = Color(0xFFF4F3EF),    // 修改: 與 Background 一致
-                    surfaceContainerLowest = Color(0xFFFFFFFF), // 最淺為白
-                    surfaceContainerHigh = Color(0xFFEBE9E2),   // 稍深
-                    surfaceContainerHighest = Color(0xFFE2E0D8) // 最深
+                    surfaceContainer = Color(0xFFF8FAFC),       // 與 Background 一致
+                    surfaceContainerLow = Color(0xFFF8FAFC),    // 與 Background 一致
+                    surfaceContainerLowest = Color(0xFFFFFFFF),
+                    surfaceContainerHigh = Color(0xFFF1F5F9),   // 稍深 (Slate 100)
+                    surfaceContainerHighest = Color(0xFFE2E8F0) // 最深 (Slate 200)
                 )
             }
 

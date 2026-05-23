@@ -1,5 +1,6 @@
 package front.app.ui
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Group
@@ -12,13 +13,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import android.net.Uri
-import front.app.ui.add.AddScreen
-import front.app.ui.friend.FriendScreen
+
 import front.app.ui.home.HomeScreen
+import front.app.ui.friend.FriendScreen
 import front.app.ui.profile.ProfileScreen
-import front.app.ui.theme.ThemeViewModel
+import front.app.ui.add.AddScreen
 import front.app.ui.detail.DetailScreen
+import front.app.ui.theme.ThemeViewModel
 import front.app.viewmodel.DramaViewModel
 
 @Composable
@@ -28,7 +29,7 @@ fun MainScreen(
     onLogout: () -> Unit = {}
 ) {
     val navController = rememberNavController()
-    var selectedTab by remember { mutableStateOf(1) }
+    var selectedTab by remember { mutableIntStateOf(1) }
     val dramaViewModel: DramaViewModel = viewModel()
 
     val tabs = listOf(
@@ -69,7 +70,6 @@ fun MainScreen(
                     viewModel = dramaViewModel,
                     onCardClick = { drama ->
                         val encodedTitle = Uri.encode(drama.title)
-                        // 注意：這裡我們需要傳遞該劇集的擁有者 userId
                         navController.navigate("detail/$encodedTitle/${drama.userId}")
                     }
                 )

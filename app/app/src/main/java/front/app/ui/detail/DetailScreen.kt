@@ -1,29 +1,39 @@
 package front.app.ui.detail
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.Drama
 import front.app.model.Tag
 import front.app.ui.add.TagSelectDialog
-import front.app.ui.home.dummyTags
+import front.app.ui.theme.*
 import front.app.viewmodel.DramaViewModel
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -32,7 +42,7 @@ fun DetailScreen(
     userId: Long, // 劇集的擁有者 ID
     onBack: () -> Unit = {},
     viewModel: DramaViewModel = viewModel(),
-    currentLoginUserId: Long = -1L // 增加：目前登入者的 ID
+    currentLoginUserId: Long = -1L // 目前登入者的 ID
 ) {
     val uriHandler = LocalUriHandler.current
     val dramaState by viewModel.currentDrama.collectAsState()
@@ -41,7 +51,8 @@ fun DetailScreen(
     val backendTags by viewModel.tags.collectAsState()
     val commonTags = remember { dummyTags.filter { it != "全部" } }
     val displayTags = remember(backendTags) {
-        (commonTags + backendTags.map { it.tagName }).distinct()
+        val backendTagNames = backendTags.map { tag: Tag -> tag.tagName }
+        (commonTags + backendTagNames).distinct()
     }
 
     // 是否為自己的劇集
@@ -60,7 +71,6 @@ fun DetailScreen(
 
     var showTagSelectDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var newTagInput by remember { mutableStateOf("") }
 
     LaunchedEffect(title, userId) {
         viewModel.fetchDrama(title, userId)
@@ -73,357 +83,318 @@ fun DetailScreen(
             editGrade = drama.grade ?: 0f
             editViewPoint = drama.viewPoint ?: ""
             editShown = drama.shown
-            editLinks = listOfNotNull(drama.link1, drama.link2, drama.link3).ifEmpty { listOf("") }
+            editLinks = listOfNotNull(drama.link1, drama.link2, drama.link3).filter { it.isNotBlank() }.ifEmpty { listOf("") }
             editActors = drama.actors?.split(",")?.filter { it.isNotBlank() }?.ifEmpty { listOf("") } ?: listOf("")
             editSelectedTags = drama.tag?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isEditing) "編輯" else dramaState?.title ?: "詳情") },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (isEditing) isEditing = false else onBack()
-                    }) {
-                        Icon(Icons.Outlined.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    if (dramaState != null && isMine) {
-                        if (isEditing) {
-                            TextButton(
-                                onClick = {
-                                    val roundedGrade = if (editGrade == 0f) null else (Math.round(editGrade * 10) / 10f)
-                                    val updatedDrama = Drama(
-                                        title = editTitle,
-                                        userId = userId,
-                                        actors = editActors.filter { it.isNotBlank() }.joinToString(","),
-                                        tag = if (editSelectedTags.isEmpty()) null else editSelectedTags.joinToString(","),
-                                        shown = editShown,
-                                        grade = roundedGrade,
-                                        viewPoint = editViewPoint,
-                                        link1 = editLinks.getOrNull(0),
-                                        link2 = editLinks.getOrNull(1),
-                                        link3 = editLinks.getOrNull(2)
-                                    )
-                                    viewModel.saveDrama(updatedDrama) {
-                                        viewModel.fetchDrama(editTitle, userId)
-                                        isEditing = false
-                                    }
-                                },
-                                enabled = editTitle.isNotBlank()
-                            ) { Text("儲存") }
-                        } else {
-                            IconButton(onClick = { isEditing = true }) {
-                                Icon(Icons.Outlined.Edit, contentDescription = "編輯")
-                            }
-                            IconButton(onClick = {
-                                showDeleteConfirmDialog = true
-                            }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = "刪除", tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                }
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.background,
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
             )
-        }
-    ) { innerPadding ->
-        if (isDetailLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (hasFetchedDetail && dramaState == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("找不到資料")
-            }
-        } else if (dramaState != null) {
-            val drama = dramaState!!
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                contentPadding = PaddingValues(vertical = 20.dp)
-            ) {
-                // ── 標題 ──
-                item {
-                    if (isEditing) {
-                        OutlinedTextField(
-                            value = editTitle,
-                            onValueChange = { editTitle = it },
-                            label = { Text("劇名 *") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
-                        DetailRow(label = "劇名", value = drama.title)
-                    }
-                }
-
-                // ── Tag ──
-                item {
-                    if (isEditing) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Tag", style = MaterialTheme.typography.bodyMedium)
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                editSelectedTags.forEach { tagName ->
-                                    InputChip(
-                                        selected = true,
-                                        onClick = { editSelectedTags = editSelectedTags - tagName },
-                                        label = { Text(tagName) },
-                                        trailingIcon = {
-                                            Icon(
-                                                Icons.Outlined.Close,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    )
-                                }
-                                AssistChip(
-                                    onClick = { showTagSelectDialog = true },
-                                    label = { Text("選擇 / 新增 Tag") },
-                                    leadingIcon = {
-                                        Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    }
-                                )
-                            }
+        )
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    title = { 
+                        Text(
+                            text = if (isEditing) "編輯劇集" else dramaState?.title ?: "詳情",
+                            fontWeight = FontWeight.Bold
+                        ) 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            if (isEditing) isEditing = false else onBack()
+                        }) {
+                            Icon(Icons.Outlined.ArrowBack, contentDescription = "返回")
                         }
-                    } else {
-                        DetailRow(label = "Tag", value = drama.tag?.replace(",", "、") ?: "—")
-                    }
-                }
-
-                // ── 評分 ──
-                item {
-                    if (isEditing) {
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("評分", style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = if (editGrade == 0f) "未評分" else "%.1f".format(editGrade),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Slider(
-                                value = editGrade,
-                                onValueChange = { editGrade = it },
-                                valueRange = 0f..10f,
-                                steps = 99,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    } else {
-                        DetailRow(
-                            label = "評分",
-                            value = if (drama.grade == null) "未評分" else "%.1f".format(drama.grade)
-                        )
-                    }
-                }
-
-                // ── 演員 ──
-                item {
-                    if (isEditing) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("演員", style = MaterialTheme.typography.bodyMedium)
-                            editActors.forEachIndexed { index, actor ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    OutlinedTextField(
-                                        value = actor,
-                                        onValueChange = { newVal ->
-                                            editActors = editActors.toMutableList().also { it[index] = newVal }
-                                        },
-                                        label = { Text("演員 ${index + 1}") },
-                                        singleLine = true,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    if (editActors.size > 1) {
-                                        IconButton(onClick = {
-                                            editActors = editActors.toMutableList().also { it.removeAt(index) }
-                                        }) {
-                                            Icon(Icons.Outlined.Close, contentDescription = "移除",
-                                                tint = MaterialTheme.colorScheme.error)
-                                        }
-                                    }
-                                }
-                            }
-                            if (editActors.size < 5) {
+                    },
+                    actions = {
+                        if (dramaState != null && isMine) {
+                            if (isEditing) {
                                 TextButton(
-                                    onClick = { editActors = editActors + "" },
-                                    modifier = Modifier.align(Alignment.Start)
-                                ) {
-                                    Icon(Icons.Outlined.Add, contentDescription = null,
-                                        modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("新增演員")
-                                }
-                            }
-                        }
-                    } else {
-                        DetailRow(
-                            label = "演員",
-                            value = drama.actors?.replace(",", "、") ?: "—"
-                        )
-                    }
-                }
-
-                // ── 觀後感 ──
-                item {
-                    if (isEditing) {
-                        OutlinedTextField(
-                            value = editViewPoint,
-                            onValueChange = { editViewPoint = it },
-                            label = { Text("觀後感") },
-                            minLines = 3,
-                            maxLines = 6,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
-                        DetailRow(label = "觀後感", value = drama.viewPoint?.ifBlank { "—" } ?: "—")
-                    }
-                }
-
-                // ── 連結 ──
-                item {
-                    if (isEditing) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("相關連結", style = MaterialTheme.typography.bodyMedium)
-                            editLinks.forEachIndexed { index, link ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    OutlinedTextField(
-                                        value = link,
-                                        onValueChange = { newVal ->
-                                            editLinks = editLinks.toMutableList().also { it[index] = newVal }
-                                        },
-                                        label = { Text("連結 ${index + 1}") },
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    if (editLinks.size > 1) {
-                                        IconButton(onClick = {
-                                            editLinks = editLinks.toMutableList().also { it.removeAt(index) }
-                                        }) {
-                                            Icon(Icons.Outlined.Close, contentDescription = "移除",
-                                                tint = MaterialTheme.colorScheme.error)
+                                    onClick = {
+                                        val roundedGrade = if (editGrade == 0f) null else (Math.round(editGrade * 10) / 10f)
+                                        val updatedDrama = Drama(
+                                            title = editTitle,
+                                            userId = userId,
+                                            actors = editActors.filter { it.isNotBlank() }.joinToString(","),
+                                            tag = if (editSelectedTags.isEmpty()) null else editSelectedTags.joinToString(","),
+                                            shown = editShown,
+                                            grade = roundedGrade,
+                                            viewPoint = editViewPoint,
+                                            link1 = editLinks.getOrNull(0),
+                                            link2 = editLinks.getOrNull(1),
+                                            link3 = editLinks.getOrNull(2),
+                                            posterPath = dramaState?.posterPath
+                                        )
+                                        viewModel.saveDrama(updatedDrama) {
+                                            viewModel.fetchDrama(editTitle, userId)
+                                            isEditing = false
                                         }
-                                    }
+                                    },
+                                    enabled = editTitle.isNotBlank()
+                                ) { 
+                                    Text("儲存", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) 
                                 }
-                            }
-                            if (editLinks.size < 3) {
-                                TextButton(
-                                    onClick = { editLinks = editLinks + "" },
-                                    modifier = Modifier.align(Alignment.Start)
-                                ) {
-                                    Icon(Icons.Outlined.Add, contentDescription = null,
-                                        modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("新增連結")
-                                }
-                            }
-                        }
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("相關連結", style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            val links = listOfNotNull(drama.link1, drama.link2, drama.link3).filter { it.isNotBlank() }
-                            if (links.isEmpty()) {
-                                Text("—", style = MaterialTheme.typography.bodyMedium)
                             } else {
-                                links.forEach { link ->
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                try {
-                                                    val url = if (link.startsWith("http")) link else "https://$link"
-                                                    uriHandler.openUri(url)
-                                                } catch (e: Exception) {
-                                                    // ignore or show error
-                                                }
-                                            }
-                                            .padding(vertical = 4.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Outlined.OpenInNew,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            text = link,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
+                                IconButton(onClick = { isEditing = true }) {
+                                    Icon(Icons.Outlined.Edit, contentDescription = "編輯")
+                                }
+                                IconButton(onClick = { showDeleteConfirmDialog = true }) {
+                                    Icon(Icons.Outlined.Delete, contentDescription = "刪除", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
                     }
+                )
+            }
+        ) { innerPadding ->
+            if (isDetailLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(strokeWidth = 3.dp)
                 }
-
-                // ── Public / Private ──
-                item {
-                    if (isEditing) {
-                        Row(
+            } else if (hasFetchedDetail && dramaState == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("找不到資料", style = MaterialTheme.typography.bodyLarge)
+                }
+            } else if (dramaState != null) {
+                val drama = dramaState!!
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(bottom = 40.dp)
+                ) {
+                    // ── 海報與基本資訊 ──
+                    item {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(horizontal = 20.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column {
-                                Text("公開", style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    if (editShown) "所有人可見" else "僅自己可見",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            Card(
+                                shape = RoundedCornerShape(24.dp),
+                                modifier = Modifier
+                                    .width(200.dp)
+                                    .height(280.dp)
+                                    .border(getGlassBorder(), RoundedCornerShape(24.dp)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            ) {
+                                AsyncImage(
+                                    model = if (drama.posterPath != null) "https://image.tmdb.org/t/p/w500${drama.posterPath}" else null,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
+                                    contentScale = ContentScale.Crop
                                 )
                             }
-                            Switch(checked = editShown, onCheckedChange = { editShown = it })
-                        }
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = (if (drama.shown) MaterialTheme.colorScheme.secondary
-                                else Color.Gray).copy(alpha = 0.15f),
-                                border = androidx.compose.foundation.BorderStroke(0.5.dp, (if (drama.shown) MaterialTheme.colorScheme.secondary else Color.Gray).copy(alpha = 0.5f))
-                            ) {
+                            
+                            if (!isEditing) {
+                                Spacer(Modifier.height(24.dp))
                                 Text(
-                                    text = if (drama.shown) "public" else "private",
-                                    color = if (drama.shown) MaterialTheme.colorScheme.secondary else Color.Gray,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    text = drama.title,
+                                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
+                                if (drama.grade != null) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = "%.1f".format(drama.grade),
+                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── 詳情卡片 ──
+                    item {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp)
+                                .border(getGlassBorder(), RoundedCornerShape(24.dp)),
+                            shape = RoundedCornerShape(24.dp),
+                            color = getGlassBackground(0.5f),
+                            tonalElevation = 2.dp
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                verticalArrangement = Arrangement.spacedBy(24.dp)
+                            ) {
+                                if (isEditing) {
+                                    // 編輯模式的欄位
+                                    OutlinedTextField(
+                                        value = editTitle,
+                                        onValueChange = { editTitle = it },
+                                        label = { Text("劇名 *") },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Tag", style = MaterialTheme.typography.titleSmall)
+                                        FlowRow(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            editSelectedTags.forEach { tagName ->
+                                                InputChip(
+                                                    selected = true,
+                                                    onClick = { editSelectedTags = editSelectedTags - tagName },
+                                                    label = { Text(tagName) },
+                                                    trailingIcon = { Icon(Icons.Outlined.Close, null, modifier = Modifier.size(16.dp)) }
+                                                )
+                                            }
+                                            AssistChip(
+                                                onClick = { showTagSelectDialog = true },
+                                                label = { Text("編輯 Tag") },
+                                                leadingIcon = { Icon(Icons.Outlined.Add, null, modifier = Modifier.size(16.dp)) }
+                                            )
+                                        }
+                                    }
+
+                                    Column {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("評分", style = MaterialTheme.typography.titleSmall)
+                                            Text("%.1f".format(editGrade), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                        }
+                                        Slider(value = editGrade, onValueChange = { editGrade = it }, valueRange = 0f..10f, steps = 99)
+                                    }
+
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("演員", style = MaterialTheme.typography.titleSmall)
+                                        editActors.forEachIndexed { index, actor ->
+                                            OutlinedTextField(
+                                                value = actor,
+                                                onValueChange = { newVal -> editActors = editActors.toMutableList().also { it[index] = newVal } },
+                                                label = { Text("演員 ${index + 1}") },
+                                                singleLine = true,
+                                                trailingIcon = {
+                                                    if (editActors.size > 1) {
+                                                        IconButton(onClick = { editActors = editActors.toMutableList().also { it.removeAt(index) } }) {
+                                                            Icon(Icons.Outlined.RemoveCircleOutline, null, tint = MaterialTheme.colorScheme.error)
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                        if (editActors.size < 5) {
+                                            TextButton(onClick = { editActors = editActors + "" }) {
+                                                Icon(Icons.Outlined.Add, null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("新增演員")
+                                            }
+                                        }
+                                    }
+
+                                    OutlinedTextField(
+                                        value = editViewPoint,
+                                        onValueChange = { editViewPoint = it },
+                                        label = { Text("觀後感") },
+                                        minLines = 3,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("相關連結", style = MaterialTheme.typography.titleSmall)
+                                        editLinks.forEachIndexed { index, link ->
+                                            OutlinedTextField(
+                                                value = link,
+                                                onValueChange = { newVal -> editLinks = editLinks.toMutableList().also { it[index] = newVal } },
+                                                label = { Text("連結 ${index + 1}") },
+                                                singleLine = true,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                        if (editLinks.size < 3) {
+                                            TextButton(onClick = { editLinks = editLinks + "" }) {
+                                                Icon(Icons.Outlined.Add, null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("新增連結")
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // 瀏覽模式
+                                    if (!drama.tag.isNullOrBlank()) {
+                                        DetailSection(label = "分類標籤") {
+                                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                drama.tag.split(",").forEach { tag ->
+                                                    FilterBadge(label = tag.trim(), color = MaterialTheme.colorScheme.primary)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (!drama.actors.isNullOrBlank()) {
+                                        DetailSection(label = "主演陣容") {
+                                            Text(drama.actors.replace(",", " 、 "), style = MaterialTheme.typography.bodyLarge)
+                                        }
+                                    }
+
+                                    DetailSection(label = "觀後感 / 心得") {
+                                        Text(
+                                            text = drama.viewPoint?.ifBlank { "尚未填寫心得" } ?: "尚未填寫心得",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            lineHeight = 24.sp
+                                        )
+                                    }
+
+                                    val links = listOfNotNull(drama.link1, drama.link2, drama.link3).filter { it.isNotBlank() }
+                                    if (links.isNotEmpty()) {
+                                        DetailSection(label = "相關連結") {
+                                            links.forEach { link ->
+                                                Surface(
+                                                    onClick = {
+                                                        try {
+                                                            val url = if (link.startsWith("http")) link else "https://$link"
+                                                            uriHandler.openUri(url)
+                                                        } catch (e: Exception) {}
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(12.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Icon(Icons.Outlined.Link, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                                        Spacer(Modifier.width(12.dp))
+                                                        Text(link, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                    }
+                                                }
+                                                Spacer(Modifier.height(8.dp))
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-
-                item { Spacer(Modifier.height(60.dp)) }
             }
         }
     }
@@ -432,22 +403,18 @@ fun DetailScreen(
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
             title = { Text("刪除劇集") },
-            text = { Text("是否要刪除「${dramaState?.title}」？") },
+            text = { Text("確定要從清單中移除「${dramaState?.title}」嗎？此動作無法復原。") },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         showDeleteConfirmDialog = false
-                        viewModel.deleteDrama(title, userId) {
-                            onBack()
-                        }
+                        viewModel.deleteDrama(title, userId) { onBack() }
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("確認") }
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("確定刪除") }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("取消")
-                }
+                TextButton(onClick = { showDeleteConfirmDialog = false }) { Text("取消") }
             }
         )
     }
@@ -471,13 +438,31 @@ fun DetailScreen(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun DetailSection(label: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
         )
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        content()
+    }
+}
+
+@Composable
+private fun FilterBadge(label: String, color: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = color.copy(alpha = 0.1f),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, color.copy(alpha = 0.2f))
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            fontSize = 12.sp,
+            color = color,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

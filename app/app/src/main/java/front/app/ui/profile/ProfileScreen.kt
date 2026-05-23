@@ -1,17 +1,23 @@
 package front.app.ui.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import front.app.ui.theme.AppTheme
-import front.app.ui.theme.FontSize
-import front.app.ui.theme.ThemeViewModel
+import androidx.compose.ui.unit.sp
+import front.app.ui.theme.*
 
 @Composable
 fun ProfileScreen(
@@ -25,134 +31,164 @@ fun ProfileScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp)
-    ) {
-        Spacer(Modifier.height(24.dp))
-
-        // ── 帳號資訊 ──
-        SectionTitle("帳號資訊")
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.background,
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
             )
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
         ) {
-            Row(
+            Spacer(Modifier.height(32.dp))
+
+            // ── 帳號資訊 ──
+            SectionTitle("帳號資訊")
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .border(getGlassBorder(), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
+                color = getGlassBackground(0.5f),
+                tonalElevation = 2.dp
             ) {
-                Icon(
-                    Icons.Outlined.AccountCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text(
-                        // TODO: 之後接社群平台後改成實際平台名稱與帳號
-                        text = "一般帳號",
-                        style = MaterialTheme.typography.titleSmall
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(getAppGradient(), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.White
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "一般帳號",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "登入方式：帳號密碼",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = { showLogoutDialog = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = getGlassBorder()
+                ) {
+                    Icon(Icons.Outlined.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("登出")
+                }
+
+                TextButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Icon(Icons.Outlined.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("刪除帳號")
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
+            Spacer(Modifier.height(32.dp))
+
+            // ── 外觀 ──
+            SectionTitle("外觀設定")
+            
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(getGlassBorder(), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
+                color = getGlassBackground(0.5f)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("色彩主題", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AppTheme.entries.forEach { theme ->
+                            FilterChip(
+                                selected = currentTheme == theme,
+                                onClick = { themeViewModel.setTheme(theme) },
+                                label = { Text(theme.label) },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Text("介面字體", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FontSize.entries.forEach { size ->
+                            FilterChip(
+                                selected = currentFontSize == size,
+                                onClick = { themeViewModel.setFontSize(size) },
+                                label = { Text(size.label) },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+            SectionTitle("隱私設定")
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(getGlassBorder(), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
+                color = getGlassBackground(0.5f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Outlined.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
+                    Spacer(Modifier.width(16.dp))
                     Text(
-                        text = "登入方式：帳號密碼",
+                        text = "社群平台串接開發中",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedButton(
-            onClick = { showLogoutDialog = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Outlined.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("登出")
-        }
-
-        TextButton(
-            onClick = { showDeleteDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-        ) {
-            Icon(Icons.Outlined.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text("刪除帳號")
-        }
-
-        Spacer(Modifier.height(24.dp))
-        HorizontalDivider()
-        Spacer(Modifier.height(24.dp))
-
-        // ── 外觀 ──
-        SectionTitle("外觀")
-        Spacer(Modifier.height(12.dp))
-
-        Text("主題", style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AppTheme.entries.forEach { theme ->
-                FilterChip(
-                    selected = currentTheme == theme,
-                    onClick = { themeViewModel.setTheme(theme) },
-                    label = { Text(theme.label) }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Text("字體大小", style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FontSize.entries.forEach { size ->
-                FilterChip(
-                    selected = currentFontSize == size,
-                    onClick = { themeViewModel.setFontSize(size) },
-                    label = { Text(size.label) }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-        HorizontalDivider()
-        Spacer(Modifier.height(24.dp))
-
-        // ── 隱私 ──
-        SectionTitle("隱私")
-        Spacer(Modifier.height(12.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Outlined.Lock,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    // TODO: 待串接 LINE、Instagram 後開放群組設定
-                    text = "待串接社群平台後開放",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

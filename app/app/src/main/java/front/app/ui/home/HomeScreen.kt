@@ -1,20 +1,27 @@
 package front.app.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,10 +30,10 @@ import front.app.model.Drama
 import front.app.model.Tag
 import front.app.viewmodel.DramaViewModel
 import coil.compose.AsyncImage
-
-// TODO: 之後換成從 ViewModel 取得的真實資料
-val dummyTags = listOf("全部", "刑偵", "愛情", "懸疑", "古裝", "科幻")
-
+import front.app.ui.theme.getAppGradient
+import front.app.ui.theme.getGlassBackground
+import front.app.ui.theme.getGlassBorder
+import front.app.ui.theme.dummyTags
 
 enum class SortType(val label: String) {
     ADDED_TIME("觀看時間"),
@@ -60,7 +67,8 @@ fun HomeScreen(
     val backendTags by viewModel.tags.collectAsState()
     val commonTags = remember { dummyTags.filter { it != "全部" } }
     val displayTags = remember(backendTags) {
-        (commonTags + backendTags.map { it.tagName }).distinct()
+        val backendTagNames = backendTags.map { tag: Tag -> tag.tagName }
+        (commonTags + backendTagNames).distinct()
     }
 
     val dramas by viewModel.dramas.collectAsState()
@@ -73,7 +81,7 @@ fun HomeScreen(
 
     val filteredDramas = remember(dramas, searchQuery, selectedTags, sortType, shownFilter) {
         dramas
-            .filter { drama ->
+            .filter { drama: Drama ->
                 if (searchQuery.isBlank()) true
                 else drama.title.contains(searchQuery, ignoreCase = true) ||
                         (drama.actors ?: "").contains(searchQuery, ignoreCase = true)
@@ -94,13 +102,23 @@ fun HomeScreen(
             }
             .sortedWith(compareByDescending {
                 when (sortType) {
-                    SortType.ADDED_TIME -> 0L // 目前 Drama 沒有 addedTime
+                    SortType.ADDED_TIME -> 0L
                     SortType.GRADE -> it.grade ?: 0f
                 }
             })
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.background,
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
+            )
+        )
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
             // ── 搜尋框 ──
@@ -111,23 +129,29 @@ fun HomeScreen(
                 leadingIcon = {
                     Icon(Icons.Outlined.Search, contentDescription = null)
                 },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Outlined.Close, contentDescription = "清除")
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Outlined.Close, contentDescription = "清除")
+                            }
                         }
-                    }
-                },
+                    },
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
             )
 
             // ── Tag 列 ──
             Surface(
                 tonalElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                color = getGlassBackground(),
+                border = getGlassBorder()
             ) {
                 Column {
                     Row(
@@ -140,10 +164,17 @@ fun HomeScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(getAppGradient())
+                        )
+                        Spacer(Modifier.width(12.dp))
                         Text(
                             text = "tag：" + if (selectedTags.isEmpty()) "全部"
                             else selectedTags.joinToString("、"),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                             modifier = Modifier.weight(1f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -195,19 +226,30 @@ fun HomeScreen(
                                             isAddingTag = false
                                             newTagInput = ""
                                         },
-                                        enabled = newTagInput.isNotBlank()
+                                        enabled = newTagInput.isNotBlank(),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                        contentPadding = PaddingValues(),
+                                        modifier = Modifier.height(40.dp)
                                     ) {
-                                        Text("確認")
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxHeight()
+                                                .background(getAppGradient(), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("確認", color = Color.White)
+                                        }
                                     }
                                 }
                             } else {
                                 TextButton(onClick = { isAddingTag = true }) {
-                                    Icon(Icons.Outlined.Add, contentDescription = null)
+                                    Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                     Spacer(Modifier.width(4.dp))
-                                    Text("+ add tag")
+                                    Text("+ add tag", color = MaterialTheme.colorScheme.primary)
                                 }
                             }
-                            HorizontalDivider()
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
                             Spacer(Modifier.height(4.dp))
                             displayTags.forEach { tagName ->
                                 Row(
@@ -240,7 +282,19 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 12.dp)
-                            ) { Text("確定") }
+                                    .height(48.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                contentPadding = PaddingValues()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(getAppGradient(), RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("確定", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                     }
                 }
@@ -250,36 +304,41 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "排序：${sortType.label}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.width(16.dp))
                 Text(
-                    text = "shown：${shownFilter.label}",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "狀態：${shownFilter.label}",
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = { showFilterSheet = true }) {
+                IconButton(
+                    onClick = { showFilterSheet = true },
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(MaterialTheme.colorScheme.surface, CircleShape)
+                        .border(getGlassBorder(), CircleShape)
+                ) {
                     Icon(
                         Icons.Outlined.FilterList,
                         contentDescription = "篩選",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
 
-            HorizontalDivider()
-
             // ── 劇集列表 ──
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(strokeWidth = 3.dp, color = MaterialTheme.colorScheme.primary)
                 }
             } else if (filteredDramas.isEmpty()) {
                 Box(
@@ -288,13 +347,14 @@ fun HomeScreen(
                 ) {
                     Text(
                         "沒有符合的結果",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp, top = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredDramas) { drama ->
@@ -311,60 +371,91 @@ fun HomeScreen(
 
         FloatingActionButton(
             onClick = onAddClick,
+            shape = RoundedCornerShape(12.dp),
+            containerColor = Color.Transparent,
+            elevation = FloatingActionButtonDefaults.elevation(0.dp),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp)
+                .size(64.dp)
         ) {
-            Icon(Icons.Outlined.Add, contentDescription = "新增")
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(getAppGradient(), RoundedCornerShape(12.dp))
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.Add, contentDescription = "新增", tint = Color.White, modifier = Modifier.size(32.dp))
+            }
         }
     }
 
     if (showFilterSheet) {
-        ModalBottomSheet(onDismissRequest = { showFilterSheet = false }) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            tonalElevation = 8.dp
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 32.dp)
             ) {
-                Text("排序方式", style = MaterialTheme.typography.titleSmall)
-                Spacer(Modifier.height(8.dp))
+                Text("排序方式", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(12.dp))
                 SortType.entries.forEach { type ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
                             .clickable { sortType = type }
-                            .padding(vertical = 10.dp),
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(selected = sortType == type, onClick = { sortType = type })
-                        Spacer(Modifier.width(8.dp))
-                        Text(type.label)
+                        Spacer(Modifier.width(12.dp))
+                        Text(type.label, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
-                Spacer(Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(16.dp))
-                Text("顯示範圍", style = MaterialTheme.typography.titleSmall)
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(20.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
+                Spacer(Modifier.height(20.dp))
+                Text("顯示範圍", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(12.dp))
                 ShownFilter.entries.forEach { filter ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
                             .clickable { shownFilter = filter }
-                            .padding(vertical = 10.dp),
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(selected = shownFilter == filter, onClick = { shownFilter = filter })
-                        Spacer(Modifier.width(8.dp))
-                        Text(filter.label)
+                        Spacer(Modifier.width(12.dp))
+                        Text(filter.label, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(24.dp))
                 Button(
                     onClick = { showFilterSheet = false },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("完成") }
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(getAppGradient(), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("完成", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
@@ -380,20 +471,37 @@ fun DramaCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(getGlassBorder(), RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = getGlassBackground(0.6f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             // 海報
-            AsyncImage(
-                model = if (drama.posterPath != null) "https://image.tmdb.org/t/p/w500${drama.posterPath}" else null,
-                contentDescription = null,
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(150.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentScale = ContentScale.Crop
-            )
+            Box {
+                AsyncImage(
+                    model = if (drama.posterPath != null) "https://image.tmdb.org/t/p/w500${drama.posterPath}" else null,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .width(110.dp)
+                        .height(160.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentScale = ContentScale.Crop
+                )
+                // 海報上的小裝飾
+                if (drama.grade != null && drama.grade!! >= 8.0f) {
+                    Box(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .background(getAppGradient(), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    ) {
+                        Text("TOP", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
 
             Column(modifier = Modifier.padding(16.dp).weight(1f)) {
                 Row(
@@ -402,41 +510,45 @@ fun DramaCard(
                 ) {
                     Text(
                         text = drama.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f)
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     if (drama.grade != null) {
                         Icon(
-                            Icons.Outlined.Star,
+                            Icons.Filled.Star,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
+                            tint = Color(0xFFFFD700), // 黃金色
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(Modifier.width(2.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             text = "%.1f".format(drama.grade),
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                         )
                     }
                 }
                 if (!drama.viewPoint.isNullOrBlank()) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         text = drama.viewPoint!!,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 16.sp
                     )
                 }
+                Spacer(modifier = Modifier.weight(1f))
                 if (drama.tag != null || showShown) {
-                    Spacer(Modifier.height(8.dp))
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(top = 8.dp)
                     ) {
-                        drama.tag?.split(",")?.filter { it.isNotBlank() }?.forEach { tag ->
-                            FilterBadge(label = tag, color = MaterialTheme.colorScheme.secondary)
+                        drama.tag?.split(",")?.filter { it.isNotBlank() }?.take(3)?.forEach { tag ->
+                            FilterBadge(label = tag, color = MaterialTheme.colorScheme.primary)
                         }
                         if (showShown) {
                             FilterBadge(
@@ -454,15 +566,20 @@ fun DramaCard(
 @Composable
 fun FilterBadge(label: String, color: Color) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = color.copy(alpha = 0.15f),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, color.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(8.dp),
+        color = color.copy(alpha = 0.1f),
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.2f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = label, fontSize = 10.sp, color = color, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
+            Text(
+                text = label, 
+                fontSize = 10.sp, 
+                color = color, 
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
