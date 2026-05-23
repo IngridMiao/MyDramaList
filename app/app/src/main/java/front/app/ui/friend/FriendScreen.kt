@@ -1,5 +1,6 @@
 package front.app.ui.friend
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,9 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,16 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import front.app.model.DramaResponse
 import front.app.viewmodel.DramaViewModel
-import coil.compose.AsyncImage
-
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Sort
 
 enum class SortOrder(val label: String) {
     UPDATED_AT("更新時間"),
@@ -35,6 +32,7 @@ enum class SortOrder(val label: String) {
 
 @Composable
 fun FriendScreen(
+    userId: Long = -1L, // 傳入目前登入者的 ID
     viewModel: DramaViewModel = viewModel(),
     onCardClick: (DramaResponse) -> Unit = {}
 ) {
@@ -42,9 +40,19 @@ fun FriendScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var sortOrder by remember { mutableStateOf(SortOrder.UPDATED_AT) }
+    
+    val context = LocalContext.current
+    var showAddFriendDialog by remember { mutableStateOf(false) }
+    var friendNameInput by remember { mutableStateOf("") }
+    
+    val pendingRequests by viewModel.pendingRequests.collectAsState()
+    var showRequestsDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchPublicDramas()
+    LaunchedEffect(userId) {
+        if (userId != -1L) {
+            viewModel.fetchFriendsDramas(userId)
+            viewModel.fetchPendingRequests(userId)
+        }
     }
 
     val sortedDramas = remember(publicDramas, sortOrder) {
@@ -61,23 +69,58 @@ fun FriendScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text("搜尋標籤、劇名或朋友") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Outlined.Close, contentDescription = "清除")
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("搜尋標籤、劇名或朋友") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true
+            )
+            
+            Spacer(Modifier.width(8.dp))
+            
+            BadgedBox(
+                badge = {
+                    if (pendingRequests.isNotEmpty()) {
+                        Badge {
+                            Text(pendingRequests.size.toString())
+                        }
                     }
                 }
-            },
-            singleLine = true
-        )
+            ) {
+                IconButton(
+                    onClick = { 
+                        if (pendingRequests.isNotEmpty()) {
+                            showRequestsDialog = true
+                        } else {
+                            showAddFriendDialog = true 
+                        }
+                    },
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp))
+                ) {
+                    Icon(
+                        if (pendingRequests.isNotEmpty()) Icons.Default.Notifications else Icons.Default.PersonAdd, 
+                        contentDescription = "好友申請",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
 
         Row(
             modifier = Modifier
@@ -93,7 +136,7 @@ fun FriendScreen(
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.width(8.dp))
-            SortOrder.values().forEach { order ->
+            SortOrder.entries.forEach { order ->
                 FilterChip(
                     selected = sortOrder == order,
                     onClick = { sortOrder = order },
@@ -130,6 +173,112 @@ fun FriendScreen(
             }
         }
     }
+
+    // ── 新增好友 Dialog ──
+    if (showAddFriendDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showAddFriendDialog = false
+                friendNameInput = ""
+            },
+            title = { Text("新增好友") },
+            text = {
+                Column {
+                    Text("請輸入對方的帳號名稱：")
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = friendNameInput,
+                        onValueChange = { friendNameInput = it },
+                        placeholder = { Text("帳號名稱") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (friendNameInput.isNotBlank()) {
+                            viewModel.addFriend(userId, friendNameInput) { error ->
+                                if (error == null) {
+                                    Toast.makeText(context, "已發送好友申請: $friendNameInput", Toast.LENGTH_SHORT).show()
+                                    showAddFriendDialog = false
+                                    friendNameInput = ""
+                                } else {
+                                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    },
+                    enabled = friendNameInput.isNotBlank()
+                ) {
+                    Text("新增")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showAddFriendDialog = false
+                    friendNameInput = ""
+                }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
+    // ── 好友申請 Dialog ──
+    if (showRequestsDialog) {
+        AlertDialog(
+            onDismissRequest = { showRequestsDialog = false },
+            title = { Text("好友申請") },
+            text = {
+                if (pendingRequests.isEmpty()) {
+                    Text("目前沒有待處理的申請")
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
+                    ) {
+                        items(pendingRequests) { requester ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(requester.userName, style = MaterialTheme.typography.bodyLarge)
+                                Row {
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.acceptFriendRequest(userId, requester.id ?: 0L) {
+                                                Toast.makeText(context, "已接受 ${requester.userName} 的好友申請", Toast.LENGTH_SHORT).show()
+                                                if (pendingRequests.isEmpty()) showRequestsDialog = false
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.Check, contentDescription = "接受", tint = Color(0xFF4CAF50))
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.declineFriendRequest(userId, requester.id ?: 0L) {
+                                                Toast.makeText(context, "已拒絕申請", Toast.LENGTH_SHORT).show()
+                                                if (pendingRequests.isEmpty()) showRequestsDialog = false
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.Close, contentDescription = "拒絕", tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showRequestsDialog = false }) {
+                    Text("關閉")
+                }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -154,7 +303,7 @@ fun FriendDramaCard(drama: DramaResponse, onClick: () -> Unit = {}) {
                     .height(150.dp)
                     .background(MaterialTheme.colorScheme.surface),
                 contentScale = ContentScale.Crop,
-                error = null // 可以放預設圖
+                error = null
             )
 
             Column(modifier = Modifier.padding(16.dp).weight(1f)) {
@@ -171,7 +320,7 @@ fun FriendDramaCard(drama: DramaResponse, onClick: () -> Unit = {}) {
                     if (drama.grade != null) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Outlined.Star,
+                                imageVector = Icons.Outlined.Star,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(16.dp)

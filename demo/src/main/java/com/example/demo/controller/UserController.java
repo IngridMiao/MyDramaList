@@ -24,9 +24,52 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private com.example.demo.service.FriendshipService friendshipService;
+
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @PostMapping("/{id}/friends")
+    public ResponseEntity<?> addFriend(@PathVariable Long id, @RequestBody com.example.demo.dto.FriendRequest request) {
+        String result = friendshipService.addFriend(id, request.getFriendUserName());
+        if ("OK".equals(result)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    @GetMapping("/{id}/friends")
+    public ResponseEntity<List<User>> getFriends(@PathVariable Long id) {
+        return ResponseEntity.ok(friendshipService.getFriends(id));
+    }
+
+    @GetMapping("/{id}/friend-requests")
+    public ResponseEntity<List<User>> getPendingRequests(@PathVariable Long id) {
+        return ResponseEntity.ok(friendshipService.getPendingRequests(id));
+    }
+
+    @PostMapping("/{id}/friend-requests/{requesterId}/accept")
+    public ResponseEntity<?> acceptFriend(@PathVariable Long id, @PathVariable Long requesterId) {
+        String result = friendshipService.acceptFriend(id, requesterId);
+        if ("OK".equals(result)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    @PostMapping("/{id}/friend-requests/{requesterId}/decline")
+    public ResponseEntity<?> declineFriend(@PathVariable Long id, @PathVariable Long requesterId) {
+        String result = friendshipService.declineFriend(id, requesterId);
+        if ("OK".equals(result)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body(result);
+        }
     }
 
     @GetMapping("/{id}")

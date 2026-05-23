@@ -15,6 +15,7 @@ import kotlinx.coroutines.awaitAll
 class DramaViewModel : ViewModel() {
     private val repository = DramaRepository()
     private val tagRepository = TagRepository()
+    private val userRepository = front.app.repository.UserRepository()
     private val tmdbService = TmdbRetrofitClient.instance
 
     private val _dramas = MutableStateFlow<List<Drama>>(emptyList())
@@ -40,6 +41,65 @@ class DramaViewModel : ViewModel() {
 
     private val _hasFetchedDetail = MutableStateFlow(false)
     val hasFetchedDetail = _hasFetchedDetail.asStateFlow()
+
+    private val _pendingRequests = MutableStateFlow<List<User>>(emptyList())
+    val pendingRequests = _pendingRequests.asStateFlow()
+
+    fun fetchPendingRequests(userId: Long) {
+        viewModelScope.launch {
+            try {
+                val response = userRepository.getFriendRequests(userId)
+                if (response.isSuccessful) {
+                    _pendingRequests.value = response.body() ?: emptyList()
+                }
+            } catch (e: Exception) {
+                // Error handling
+            }
+        }
+    }
+
+    fun acceptFriendRequest(userId: Long, requesterId: Long, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val response = userRepository.acceptFriendRequest(userId, requesterId)
+                if (response.isSuccessful) {
+                    fetchPendingRequests(userId)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                // Error handling
+            }
+        }
+    }
+
+    fun declineFriendRequest(userId: Long, requesterId: Long, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val response = userRepository.declineFriendRequest(userId, requesterId)
+                if (response.isSuccessful) {
+                    fetchPendingRequests(userId)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                // Error handling
+            }
+        }
+    }
+
+    fun addFriend(userId: Long, friendUserName: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = userRepository.addFriend(userId, friendUserName)
+                if (response.isSuccessful) {
+                    onResult(null) // Success
+                } else {
+                    onResult(response.errorBody()?.string() ?: "新增失敗")
+                }
+            } catch (e: Exception) {
+                onResult("發生錯誤: ${e.message}")
+            }
+        }
+    }
 
     fun searchTmdb(query: String) {
         if (query.isBlank()) {
@@ -93,6 +153,22 @@ class DramaViewModel : ViewModel() {
                 val response = repository.getDramas(userId)
                 if (response.isSuccessful) {
                     _dramas.value = response.body() ?: emptyList()
+                }
+            } catch (e: Exception) {
+                // Error handling
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun fetchFriendsDramas(userId: Long) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = repository.getFriendsDramas(userId)
+                if (response.isSuccessful) {
+                    _publicDramas.value = response.body() ?: emptyList()
                 }
             } catch (e: Exception) {
                 // Error handling

@@ -65,6 +65,7 @@ fun MainScreen(
         ) {
             composable("friend") {
                 FriendScreen(
+                    userId = userId,
                     viewModel = dramaViewModel,
                     onCardClick = { drama ->
                         val encodedTitle = Uri.encode(drama.title)

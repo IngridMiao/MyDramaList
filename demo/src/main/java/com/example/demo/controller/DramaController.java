@@ -22,6 +22,11 @@ public class DramaController {
         return ResponseEntity.ok(dramaService.getAllPublicDramas());
     }
 
+    @GetMapping("/friends")
+    public ResponseEntity<List<DramaResponse>> getFriendsDramas(@RequestParam Long userId) {
+        return ResponseEntity.ok(dramaService.getFriendsPublicDramas(userId));
+    }
+
     @GetMapping
     public ResponseEntity<List<Drama>> getAllDramas(
             @RequestParam Long userId,

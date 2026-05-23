@@ -18,6 +18,27 @@ interface ApiService {
     @GET("api/users/{id}")
     suspend fun getUser(@Path("id") id: Long): Response<User>
 
+    @POST("api/users/{id}/friends")
+    suspend fun addFriend(@Path("id") userId: Long, @Body request: front.app.model.FriendRequest): Response<Unit>
+
+    @GET("api/users/{id}/friends")
+    suspend fun getFriends(@Path("id") userId: Long): Response<List<User>>
+
+    @GET("api/users/{id}/friend-requests")
+    suspend fun getFriendRequests(@Path("id") userId: Long): Response<List<User>>
+
+    @POST("api/users/{id}/friend-requests/{requesterId}/accept")
+    suspend fun acceptFriendRequest(
+        @Path("id") userId: Long,
+        @Path("requesterId") requesterId: Long
+    ): Response<Unit>
+
+    @POST("api/users/{id}/friend-requests/{requesterId}/decline")
+    suspend fun declineFriendRequest(
+        @Path("id") userId: Long,
+        @Path("requesterId") requesterId: Long
+    ): Response<Unit>
+
     // Tag APIs
     @GET("api/tags")
     suspend fun getTags(@Query("userId") userId: Long): Response<List<Tag>>
@@ -28,6 +49,9 @@ interface ApiService {
     // Drama APIs
     @GET("api/dramas/public")
     suspend fun getPublicDramas(): Response<List<DramaResponse>>
+
+    @GET("api/dramas/friends")
+    suspend fun getFriendsDramas(@Query("userId") userId: Long): Response<List<DramaResponse>>
 
     @GET("api/dramas")
     suspend fun getDramas(
