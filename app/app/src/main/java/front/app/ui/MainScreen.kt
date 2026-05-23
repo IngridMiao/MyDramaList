@@ -63,7 +63,16 @@ fun MainScreen(
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("friend") { FriendScreen(viewModel = dramaViewModel) }
+            composable("friend") {
+                FriendScreen(
+                    viewModel = dramaViewModel,
+                    onCardClick = { drama ->
+                        val encodedTitle = Uri.encode(drama.title)
+                        // 注意：這裡我們需要傳遞該劇集的擁有者 userId
+                        navController.navigate("detail/$encodedTitle/${drama.userId}")
+                    }
+                )
+            }
             composable("home") {
                 HomeScreen(
                     userId = userId,
@@ -71,7 +80,7 @@ fun MainScreen(
                     onAddClick = { navController.navigate("add") },
                     onCardClick = { drama ->
                         val encodedTitle = Uri.encode(drama.title)
-                        navController.navigate("detail/$encodedTitle")
+                        navController.navigate("detail/$encodedTitle/$userId")
                     }
                 )
             }
@@ -90,14 +99,16 @@ fun MainScreen(
                     onSave = { navController.popBackStack() }
                 )
             }
-            composable("detail/{title}") { backStackEntry ->
+            composable("detail/{title}/{dramaUserId}") { backStackEntry ->
                 val title = backStackEntry.arguments?.getString("title") ?: ""
+                val dramaUserId = backStackEntry.arguments?.getString("dramaUserId")?.toLong() ?: userId
                 val decodedTitle = Uri.decode(title)
                 DetailScreen(
                     title = decodedTitle,
-                    userId = userId,
-                    viewModel = dramaViewModel, // 使用共享的 ViewModel
-                    onBack = { navController.popBackStack() }
+                    userId = dramaUserId,
+                    viewModel = dramaViewModel,
+                    onBack = { navController.popBackStack() },
+                    currentLoginUserId = userId
                 )
             }
         }

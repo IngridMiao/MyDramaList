@@ -3,6 +3,7 @@ package com.example.demo.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -19,4 +20,5 @@ public class DramaResponse {
     private String link1;
     private String link2;
     private String link3;
+    private LocalDateTime updatedAt;
 }

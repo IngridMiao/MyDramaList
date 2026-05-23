@@ -11,5 +11,6 @@ data class DramaResponse(
     val viewPoint: String? = null,
     val link1: String? = null,
     val link2: String? = null,
-    val link3: String? = null
+    val link3: String? = null,
+    val updatedAt: String? = null
 )

@@ -29,9 +29,10 @@ import front.app.viewmodel.DramaViewModel
 @Composable
 fun DetailScreen(
     title: String,
-    userId: Long,
+    userId: Long, // 劇集的擁有者 ID
     onBack: () -> Unit = {},
-    viewModel: DramaViewModel = viewModel()
+    viewModel: DramaViewModel = viewModel(),
+    currentLoginUserId: Long = -1L // 增加：目前登入者的 ID
 ) {
     val uriHandler = LocalUriHandler.current
     val dramaState by viewModel.currentDrama.collectAsState()
@@ -42,6 +43,9 @@ fun DetailScreen(
     val displayTags = remember(backendTags) {
         (commonTags + backendTags.map { it.tagName }).distinct()
     }
+
+    // 是否為自己的劇集
+    val isMine = userId == currentLoginUserId
 
     var isEditing by remember { mutableStateOf(false) }
 
@@ -87,7 +91,7 @@ fun DetailScreen(
                     }
                 },
                 actions = {
-                    if (dramaState != null) {
+                    if (dramaState != null && isMine) {
                         if (isEditing) {
                             TextButton(
                                 onClick = {

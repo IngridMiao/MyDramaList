@@ -1,5 +1,6 @@
 package front.app.ui.friend
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,19 +22,36 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.DramaResponse
 import front.app.viewmodel.DramaViewModel
 
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Sort
+
+enum class SortOrder(val label: String) {
+    UPDATED_AT("更新時間"),
+    GRADE("評級")
+}
+
 @Composable
 fun FriendScreen(
-    viewModel: DramaViewModel = viewModel()
+    viewModel: DramaViewModel = viewModel(),
+    onCardClick: (DramaResponse) -> Unit = {}
 ) {
     val publicDramas by viewModel.publicDramas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var sortOrder by remember { mutableStateOf(SortOrder.UPDATED_AT) }
 
     LaunchedEffect(Unit) {
         viewModel.fetchPublicDramas()
     }
 
-    val filteredDramas = publicDramas.filter {
+    val sortedDramas = remember(publicDramas, sortOrder) {
+        when (sortOrder) {
+            SortOrder.UPDATED_AT -> publicDramas.sortedByDescending { it.updatedAt ?: "" }
+            SortOrder.GRADE -> publicDramas.sortedByDescending { it.grade ?: 0f }
+        }
+    }
+
+    val filteredDramas = sortedDramas.filter {
         it.title.contains(searchQuery, ignoreCase = true) ||
         (it.tag?.contains(searchQuery, ignoreCase = true) ?: false) ||
         it.userName.contains(searchQuery, ignoreCase = true)
@@ -58,6 +76,34 @@ fun FriendScreen(
             singleLine = true
         )
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            Icon(
+                imageVector = Icons.Default.Sort,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            SortOrder.values().forEach { order ->
+                FilterChip(
+                    selected = sortOrder == order,
+                    onClick = { sortOrder = order },
+                    label = { Text(order.label) },
+                    modifier = Modifier.padding(start = 8.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            }
+        }
+
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -69,7 +115,7 @@ fun FriendScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(filteredDramas) { drama ->
-                    FriendDramaCard(drama)
+                    FriendDramaCard(drama, onClick = { onCardClick(drama) })
                 }
                 if (filteredDramas.isEmpty() && !isLoading) {
                     item {
@@ -85,9 +131,11 @@ fun FriendScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun FriendDramaCard(drama: DramaResponse) {
+fun FriendDramaCard(drama: DramaResponse, onClick: () -> Unit = {}) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant

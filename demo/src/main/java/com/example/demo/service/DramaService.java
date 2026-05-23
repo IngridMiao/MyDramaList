@@ -48,7 +48,8 @@ public class DramaService {
                     drama.getViewPoint(),
                     drama.getLink1(),
                     drama.getLink2(),
-                    drama.getLink3()
+                    drama.getLink3(),
+                    drama.getUpdatedAt()
             );
         }).collect(java.util.stream.Collectors.toList());
     }
