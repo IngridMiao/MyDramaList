@@ -21,10 +21,21 @@ import front.app.ui.theme.FontSize
 import front.app.ui.theme.ThemeViewModel
 
 // ── 淺色主題色票 ──────────────────────────────────────────
-private val LightPrimary         = Color(0xFF185FA5)
+private val LightPrimary         = Color(0xFF185FA5) // 藍色
 private val LightOnPrimary       = Color(0xFFFFFFFF)
-private val LightSecondary       = Color(0xFFBA7517)
+private val LightPrimaryContainer  = Color(0xFFD1E4FF)
+private val LightOnPrimaryContainer= Color(0xFF001D36)
+
+private val LightSecondary       = Color(0xFFBA7517) // 橘色
 private val LightOnSecondary     = Color(0xFFFFFFFF)
+private val LightSecondaryContainer = Color(0xFFFFDDB1)
+private val LightOnSecondaryContainer = Color(0xFF291800)
+
+private val LightTertiary        = Color(0xFF185FA5) // 暫時用 Primary 同色調避免紫色
+private val LightOnTertiary      = Color(0xFFFFFFFF)
+private val LightTertiaryContainer = Color(0xFFD1E4FF)
+private val LightOnTertiaryContainer = Color(0xFF001D36)
+
 private val LightBackground      = Color(0xFFF4F3EF)
 private val LightOnBackground    = Color(0xFF1A1A18)
 private val LightSurface         = Color(0xFFFFFFFF)
@@ -35,8 +46,19 @@ private val LightOnSurfaceVariant= Color(0xFF5F5E5A)
 // ── 深色主題色票 ──────────────────────────────────────────
 private val DarkPrimary          = Color(0xFF85B7EB)
 private val DarkOnPrimary        = Color(0xFF042C53)
+private val DarkPrimaryContainer = Color(0xFF004975)
+private val DarkOnPrimaryContainer= Color(0xFFD1E4FF)
+
 private val DarkSecondary        = Color(0xFFEF9F27)
 private val DarkOnSecondary      = Color(0xFF412402)
+private val DarkSecondaryContainer = Color(0xFF5A3B00)
+private val DarkOnSecondaryContainer = Color(0xFFFFDDB1)
+
+private val DarkTertiary         = Color(0xFF85B7EB)
+private val DarkOnTertiary       = Color(0xFF042C53)
+private val DarkTertiaryContainer  = Color(0xFF004975)
+private val DarkOnTertiaryContainer= Color(0xFFD1E4FF)
+
 private val DarkBackground       = Color(0xFF14151A)
 private val DarkOnBackground     = Color(0xFFE8E7E2)
 private val DarkSurface          = Color(0xFF1E2028)
@@ -65,27 +87,53 @@ class MainActivity : ComponentActivity() {
                 darkColorScheme(
                     primary = DarkPrimary,
                     onPrimary = DarkOnPrimary,
+                    primaryContainer = DarkPrimaryContainer,
+                    onPrimaryContainer = DarkOnPrimaryContainer,
                     secondary = DarkSecondary,
                     onSecondary = DarkOnSecondary,
+                    secondaryContainer = DarkSecondaryContainer,
+                    onSecondaryContainer = DarkOnSecondaryContainer,
+                    tertiary = DarkTertiary,
+                    onTertiary = DarkOnTertiary,
+                    tertiaryContainer = DarkTertiaryContainer,
+                    onTertiaryContainer = DarkOnTertiaryContainer,
                     background = DarkBackground,
                     onBackground = DarkOnBackground,
                     surface = DarkSurface,
                     onSurface = DarkOnSurface,
                     surfaceVariant = DarkSurfaceVariant,
-                    onSurfaceVariant = DarkOnSurfaceVariant
+                    onSurfaceVariant = DarkOnSurfaceVariant,
+                    surfaceContainer = Color(0xFF1E2028),
+                    surfaceContainerLow = Color(0xFF191C23),
+                    surfaceContainerLowest = Color(0xFF0C0F16),
+                    surfaceContainerHigh = Color(0xFF282A33),
+                    surfaceContainerHighest = Color(0xFF33353E)
                 )
             } else {
                 lightColorScheme(
                     primary = LightPrimary,
                     onPrimary = LightOnPrimary,
+                    primaryContainer = LightPrimaryContainer,
+                    onPrimaryContainer = LightOnPrimaryContainer,
                     secondary = LightSecondary,
                     onSecondary = LightOnSecondary,
+                    secondaryContainer = LightSecondaryContainer,
+                    onSecondaryContainer = LightOnSecondaryContainer,
+                    tertiary = LightTertiary,
+                    onTertiary = LightOnTertiary,
+                    tertiaryContainer = LightTertiaryContainer,
+                    onTertiaryContainer = LightOnTertiaryContainer,
                     background = LightBackground,
                     onBackground = LightOnBackground,
                     surface = LightSurface,
                     onSurface = LightOnSurface,
                     surfaceVariant = LightSurfaceVariant,
-                    onSurfaceVariant = LightOnSurfaceVariant
+                    onSurfaceVariant = LightOnSurfaceVariant,
+                    surfaceContainer = Color(0xFFF4F3EF),       // 修改: 與 Background 一致
+                    surfaceContainerLow = Color(0xFFF4F3EF),    // 修改: 與 Background 一致
+                    surfaceContainerLowest = Color(0xFFFFFFFF), // 最淺為白
+                    surfaceContainerHigh = Color(0xFFEBE9E2),   // 稍深
+                    surfaceContainerHighest = Color(0xFFE2E0D8) // 最深
                 )
             }
 
