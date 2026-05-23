@@ -49,6 +49,7 @@ public class DramaService {
                     drama.getLink1(),
                     drama.getLink2(),
                     drama.getLink3(),
+                    drama.getPosterPath(),
                     drama.getUpdatedAt()
             );
         }).collect(java.util.stream.Collectors.toList());

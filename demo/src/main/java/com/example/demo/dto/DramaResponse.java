@@ -20,5 +20,6 @@ public class DramaResponse {
     private String link1;
     private String link2;
     private String link3;
+    private String posterPath;
     private LocalDateTime updatedAt;
 }

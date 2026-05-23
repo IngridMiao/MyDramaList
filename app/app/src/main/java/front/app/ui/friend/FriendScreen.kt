@@ -1,5 +1,6 @@
 package front.app.ui.friend
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,12 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.DramaResponse
 import front.app.viewmodel.DramaViewModel
+import coil.compose.AsyncImage
 
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Sort
@@ -141,55 +144,69 @@ fun FriendDramaCard(drama: DramaResponse, onClick: () -> Unit = {}) {
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = drama.userName,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (drama.grade != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Outlined.Star,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // 海報
+            AsyncImage(
+                model = if (drama.posterPath != null) "https://image.tmdb.org/t/p/w500${drama.posterPath}" else null,
+                contentDescription = null,
+                modifier = Modifier
+                    .width(100.dp)
+                    .height(150.dp)
+                    .background(MaterialTheme.colorScheme.surface),
+                contentScale = ContentScale.Crop,
+                error = null // 可以放預設圖
+            )
+
+            Column(modifier = Modifier.padding(16.dp).weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = drama.userName,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (drama.grade != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Outlined.Star,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "%.1f".format(drama.grade),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    } else {
                         Text(
-                            text = "%.1f".format(drama.grade),
+                            text = "尚未評分",
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                     }
-                } else {
-                    Text(
-                        text = "尚未評分",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
                 }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = drama.title,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.align(Alignment.Start)
-            )
-            
-            if (!drama.tag.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    drama.tag.split(",").filter { it.isNotBlank() }.forEach { tag ->
-                        FriendFilterBadge(label = tag.trim(), color = MaterialTheme.colorScheme.secondary)
+                Text(
+                    text = drama.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                
+                if (!drama.tag.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        drama.tag.split(",").filter { it.isNotBlank() }.forEach { tag ->
+                            FriendFilterBadge(label = tag.trim(), color = MaterialTheme.colorScheme.secondary)
+                        }
                     }
                 }
             }

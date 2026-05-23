@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,6 +21,15 @@ import front.app.model.Drama
 import front.app.model.Tag
 import front.app.ui.home.dummyTags
 import front.app.viewmodel.DramaViewModel
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -35,6 +45,22 @@ fun AddScreen(
     var viewPoint by remember { mutableStateOf("") }
     var shown by remember { mutableStateOf(true) }
     var links by remember { mutableStateOf(listOf("")) }
+    var posterPath by remember { mutableStateOf<String?>(null) }
+
+    val suggestions by viewModel.suggestions.collectAsState()
+    var showSuggestions by remember { mutableStateOf(false) }
+
+    // 搜尋防抖 (Debounce)
+    LaunchedEffect(title) {
+        if (title.length >= 2) {
+            delay(500) // 等待 500ms
+            viewModel.searchTmdb(title)
+            showSuggestions = true
+        } else {
+            viewModel.clearSuggestions()
+            showSuggestions = false
+        }
+    }
 
     // tag 相關
     val backendTags by viewModel.tags.collectAsState()
@@ -73,7 +99,8 @@ fun AddScreen(
                                 viewPoint = viewPoint,
                                 link1 = links.getOrNull(0),
                                 link2 = links.getOrNull(1),
-                                link3 = links.getOrNull(2)
+                                link3 = links.getOrNull(2),
+                                posterPath = posterPath
                             )
                             viewModel.saveDrama(drama) {
                                 onSave()
@@ -97,13 +124,51 @@ fun AddScreen(
         ) {
             // ── 標題 ──
             item {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("劇名 *") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("劇名 *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (showSuggestions && suggestions.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 64.dp), // 放在輸入框下面
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column {
+                                suggestions.forEach { suggestion ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(suggestion.title, fontWeight = FontWeight.Bold)
+                                                if (suggestion.actors.isNotEmpty()) {
+                                                    Text(
+                                                        "主演: ${suggestion.actors.joinToString(", ")}",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        onClick = {
+                                            title = suggestion.title
+                                            actors = suggestion.actors.ifEmpty { listOf("") }
+                                            posterPath = suggestion.posterPath
+                                            showSuggestions = false
+                                            viewModel.clearSuggestions()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // ── Tag ──

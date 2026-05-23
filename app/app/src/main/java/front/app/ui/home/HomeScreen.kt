@@ -1,6 +1,7 @@
 package front.app.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,6 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import front.app.model.Drama
 import front.app.model.Tag
 import front.app.viewmodel.DramaViewModel
+import coil.compose.AsyncImage
 
 // TODO: 之後換成從 ViewModel 取得的真實資料
 val dummyTags = listOf("全部", "刑偵", "愛情", "懸疑", "古裝", "科幻")
@@ -380,54 +383,67 @@ fun DramaCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = drama.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                if (drama.grade != null) {
-                    Icon(
-                        Icons.Outlined.Star,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(2.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // 海報
+            AsyncImage(
+                model = if (drama.posterPath != null) "https://image.tmdb.org/t/p/w500${drama.posterPath}" else null,
+                contentDescription = null,
+                modifier = Modifier
+                    .width(100.dp)
+                    .height(150.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentScale = ContentScale.Crop
+            )
+
+            Column(modifier = Modifier.padding(16.dp).weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        text = "%.1f".format(drama.grade),
-                        style = MaterialTheme.typography.bodySmall
+                        text = drama.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (drama.grade != null) {
+                        Icon(
+                            Icons.Outlined.Star,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(2.dp))
+                        Text(
+                            text = "%.1f".format(drama.grade),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+                if (!drama.viewPoint.isNullOrBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = drama.viewPoint!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-            if (!drama.viewPoint.isNullOrBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = drama.viewPoint!!,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            if (drama.tag != null || showShown) {
-                Spacer(Modifier.height(8.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    drama.tag?.split(",")?.filter { it.isNotBlank() }?.forEach { tag ->
-                        FilterBadge(label = tag, color = MaterialTheme.colorScheme.secondary)
-                    }
-                    if (showShown) {
-                        FilterBadge(
-                            label = if (drama.shown) "public" else "private",
-                            color = if (drama.shown) MaterialTheme.colorScheme.secondary else Color.Gray
-                        )
+                if (drama.tag != null || showShown) {
+                    Spacer(Modifier.height(8.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        drama.tag?.split(",")?.filter { it.isNotBlank() }?.forEach { tag ->
+                            FilterBadge(label = tag, color = MaterialTheme.colorScheme.secondary)
+                        }
+                        if (showShown) {
+                            FilterBadge(
+                                label = if (drama.shown) "public" else "private",
+                                color = if (drama.shown) MaterialTheme.colorScheme.secondary else Color.Gray
+                            )
+                        }
                     }
                 }
             }

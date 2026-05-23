@@ -66,6 +66,9 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.gson)
 
+    // Coil
+    implementation(libs.coil.compose)
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation(libs.junit)

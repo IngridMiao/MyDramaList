@@ -2,18 +2,20 @@ package front.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import front.app.model.Drama
-import front.app.model.DramaResponse
-import front.app.model.Tag
+import front.app.model.*
 import front.app.repository.DramaRepository
 import front.app.repository.TagRepository
+import front.app.network.TmdbRetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 
 class DramaViewModel : ViewModel() {
     private val repository = DramaRepository()
     private val tagRepository = TagRepository()
+    private val tmdbService = TmdbRetrofitClient.instance
 
     private val _dramas = MutableStateFlow<List<Drama>>(emptyList())
     val dramas = _dramas.asStateFlow()
@@ -27,6 +29,9 @@ class DramaViewModel : ViewModel() {
     private val _currentDrama = MutableStateFlow<Drama?>(null)
     val currentDrama = _currentDrama.asStateFlow()
 
+    private val _suggestions = MutableStateFlow<List<DramaSuggestion>>(emptyList())
+    val suggestions = _suggestions.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
@@ -35,6 +40,51 @@ class DramaViewModel : ViewModel() {
 
     private val _hasFetchedDetail = MutableStateFlow(false)
     val hasFetchedDetail = _hasFetchedDetail.asStateFlow()
+
+    fun searchTmdb(query: String) {
+        if (query.isBlank()) {
+            _suggestions.value = emptyList()
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val searchResponse = tmdbService.searchMulti(query, TmdbRetrofitClient.API_KEY)
+                if (searchResponse.isSuccessful) {
+                    val results = searchResponse.body()?.results?.take(5) ?: emptyList()
+                    val suggestionList = results.map { result ->
+                        async {
+                            val creditsResponse = if (result.mediaType == "tv") {
+                                tmdbService.getTvCredits(result.id, TmdbRetrofitClient.API_KEY)
+                            } else {
+                                tmdbService.getMovieCredits(result.id, TmdbRetrofitClient.API_KEY)
+                            }
+                            
+                            val actors = if (creditsResponse.isSuccessful) {
+                                creditsResponse.body()?.cast?.take(3)?.map { it.name } ?: emptyList()
+                            } else {
+                                emptyList()
+                            }
+                            
+                            DramaSuggestion(
+                                title = result.displayTitle,
+                                actors = actors,
+                                tmdbId = result.id,
+                                posterPath = result.posterPath
+                            )
+                        }
+                    }.awaitAll()
+                    _suggestions.value = suggestionList
+                }
+            } catch (e: Exception) {
+                _suggestions.value = emptyList()
+            }
+        }
+    }
+
+    fun clearSuggestions() {
+        _suggestions.value = emptyList()
+    }
 
     fun fetchDramas(userId: Long) {
         viewModelScope.launch {

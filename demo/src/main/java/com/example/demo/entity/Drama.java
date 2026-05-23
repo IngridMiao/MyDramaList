@@ -28,6 +28,8 @@ public class Drama {
     private String link2;
     private String link3;
 
+    private String posterPath;
+
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }

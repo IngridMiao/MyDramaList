@@ -34,6 +34,7 @@ fun LoginScreen(
         when (val state = loginState) {
             is LoginViewModel.LoginResult.Success -> {
                 onLoginSuccess(state.user.id ?: 0L)
+                viewModel.resetState()
             }
             is LoginViewModel.LoginResult.Error -> {
                 errorMessage = state.message
