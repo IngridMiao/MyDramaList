@@ -159,15 +159,7 @@ fun DetailScreen(
                 )
             }
         ) { innerPadding ->
-            if (isDetailLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(strokeWidth = 3.dp)
-                }
-            } else if (hasFetchedDetail && dramaState == null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("找不到資料", style = MaterialTheme.typography.bodyLarge)
-                }
-            } else if (dramaState != null) {
+            if (dramaState != null) {
                 val drama = dramaState!!
                 LazyColumn(
                     modifier = Modifier
@@ -394,6 +386,14 @@ fun DetailScreen(
                             }
                         }
                     }
+                }
+            } else if (isDetailLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(strokeWidth = 3.dp)
+                }
+            } else if (hasFetchedDetail) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("找不到資料", style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }

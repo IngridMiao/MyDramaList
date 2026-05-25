@@ -225,7 +225,7 @@ class DramaViewModel : ViewModel() {
         viewModelScope.launch {
             _hasFetchedDetail.value = false
             _isDetailLoading.value = true
-            _currentDrama.value = null 
+            // 不再清空資料，以利即時顯示
             try {
                 val response = repository.getDrama(title, userId)
                 if (response.isSuccessful) {
@@ -238,6 +238,27 @@ class DramaViewModel : ViewModel() {
                 _hasFetchedDetail.value = true
             }
         }
+    }
+
+    fun setCurrentDrama(drama: Drama?) {
+        _currentDrama.value = drama
+    }
+
+    fun setCurrentDramaFromResponse(response: DramaResponse) {
+        _currentDrama.value = Drama(
+            title = response.title,
+            userId = response.userId,
+            actors = response.actors,
+            tag = response.tag,
+            shown = response.shown,
+            grade = response.grade,
+            viewPoint = response.viewPoint,
+            link1 = response.link1,
+            link2 = response.link2,
+            link3 = response.link3,
+            posterPath = response.posterPath,
+            updatedAt = response.updatedAt
+        )
     }
 
     fun saveDrama(drama: Drama, onComplete: () -> Unit = {}) {

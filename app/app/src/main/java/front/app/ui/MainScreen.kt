@@ -69,6 +69,7 @@ fun MainScreen(
                     userId = userId,
                     viewModel = dramaViewModel,
                     onCardClick = { drama ->
+                        dramaViewModel.setCurrentDramaFromResponse(drama)
                         val encodedTitle = Uri.encode(drama.title)
                         navController.navigate("detail/$encodedTitle/${drama.userId}")
                     }
@@ -80,6 +81,7 @@ fun MainScreen(
                     viewModel = dramaViewModel,
                     onAddClick = { navController.navigate("add") },
                     onCardClick = { drama ->
+                        dramaViewModel.setCurrentDrama(drama)
                         val encodedTitle = Uri.encode(drama.title)
                         navController.navigate("detail/$encodedTitle/$userId")
                     }
