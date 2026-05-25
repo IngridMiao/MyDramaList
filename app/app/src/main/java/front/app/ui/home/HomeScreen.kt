@@ -135,6 +135,12 @@ fun HomeScreen(
                                 Icon(Icons.Outlined.Close, contentDescription = "清除")
                             }
                         }
+                        IconButton(onClick = { 
+                            viewModel.fetchDramas(userId)
+                            viewModel.fetchTags(userId)
+                        }) {
+                            Icon(Icons.Outlined.Refresh, contentDescription = "重新整理")
+                        }
                     },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),

@@ -108,6 +108,14 @@ fun FriendScreen(
                                 Icon(Icons.Default.Close, contentDescription = "清除")
                             }
                         }
+                        IconButton(onClick = { 
+                            if (userId != -1L) {
+                                viewModel.fetchFriendsDramas(userId)
+                                viewModel.fetchPendingRequests(userId)
+                            }
+                        }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "重新整理")
+                        }
                     },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp)
@@ -272,6 +280,7 @@ fun FriendScreen(
                                     IconButton(
                                         onClick = {
                                             viewModel.acceptFriendRequest(userId, requester.id ?: 0L) {
+                                                viewModel.fetchFriendsDramas(userId)
                                                 Toast.makeText(context, "已接受 ${requester.userName} 的好友申請", Toast.LENGTH_SHORT).show()
                                                 if (pendingRequests.isEmpty()) showRequestsDialog = false
                                             }

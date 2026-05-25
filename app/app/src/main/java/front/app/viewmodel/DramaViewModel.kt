@@ -266,11 +266,19 @@ class DramaViewModel : ViewModel() {
             try {
                 val response = repository.saveDrama(drama)
                 if (response.isSuccessful) {
-                    // Refresh and wait for completion before going back
-                    val refreshResponse = repository.getDramas(drama.userId)
-                    if (refreshResponse.isSuccessful) {
-                        _dramas.value = refreshResponse.body() ?: emptyList()
+                    // 更新當前劇集，讓 UI 立即有感
+                    _currentDrama.value = drama
+                    
+                    // 更新劇集列表
+                    val currentList = _dramas.value.toMutableList()
+                    val index = currentList.indexOfFirst { it.title == drama.title }
+                    if (index != -1) {
+                        currentList[index] = drama
+                    } else {
+                        currentList.add(0, drama)
                     }
+                    _dramas.value = currentList
+                    
                     onComplete()
                 }
             } catch (e: Exception) {

@@ -89,9 +89,15 @@ public class UserController {
         if (userService.getUserByUserName(user.getUserName()).isPresent()) {
             return ResponseEntity.status(409).body("帳號已存在");
         }
-        User savedUser = userService.saveUser(user);
-        System.out.println("User saved with ID: " + savedUser.getId());
-        return ResponseEntity.ok(savedUser);
+        try {
+            User savedUser = userService.saveUser(user);
+            System.out.println("User saved with ID: " + savedUser.getId());
+            return ResponseEntity.ok(savedUser);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.status(409).body("帳號已存在");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("註冊失敗: " + e.getMessage());
+        }
     }
 
     @PostMapping("/login")

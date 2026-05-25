@@ -71,6 +71,7 @@ fun DetailScreen(
 
     var showTagSelectDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
 
     LaunchedEffect(title, userId) {
         viewModel.fetchDrama(title, userId)
@@ -124,6 +125,7 @@ fun DetailScreen(
                                 TextButton(
                                     onClick = {
                                         val roundedGrade = if (editGrade == 0f) null else (Math.round(editGrade * 10) / 10f)
+                                        isSaving = true
                                         val updatedDrama = Drama(
                                             title = editTitle,
                                             userId = userId,
@@ -138,13 +140,17 @@ fun DetailScreen(
                                             posterPath = dramaState?.posterPath
                                         )
                                         viewModel.saveDrama(updatedDrama) {
-                                            viewModel.fetchDrama(editTitle, userId)
+                                            isSaving = false
                                             isEditing = false
                                         }
                                     },
-                                    enabled = editTitle.isNotBlank()
+                                    enabled = editTitle.isNotBlank() && !isSaving
                                 ) { 
-                                    Text("儲存", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) 
+                                    if (isSaving) {
+                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                    } else {
+                                        Text("儲存", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) 
+                                    }
                                 }
                             } else {
                                 IconButton(onClick = { isEditing = true }) {
@@ -360,10 +366,26 @@ fun DetailScreen(
                                             links.forEach { link ->
                                                 Surface(
                                                     onClick = {
-                                                        try {
-                                                            val url = if (link.startsWith("http")) link else "https://$link"
-                                                            uriHandler.openUri(url)
-                                                        } catch (e: Exception) {}
+                                                        val trimmed = link.trim()
+                                                        if (trimmed.isNotBlank()) {
+                                                            try {
+                                                                // 使用正則表達式尋找第一個網址
+                                                                val urlRegex = "(https?://[^\\s]+)".toRegex()
+                                                                val matchResult = urlRegex.find(trimmed)
+                                                                
+                                                                val urlToOpen = if (matchResult != null) {
+                                                                    matchResult.value
+                                                                } else {
+                                                                    // 如果沒找到 http，嘗試原本的補齊邏輯
+                                                                    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+                                                                        trimmed
+                                                                    } else {
+                                                                        "https://$trimmed"
+                                                                    }
+                                                                }
+                                                                uriHandler.openUri(urlToOpen)
+                                                            } catch (e: Exception) {}
+                                                        }
                                                     },
                                                     shape = RoundedCornerShape(12.dp),
                                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
