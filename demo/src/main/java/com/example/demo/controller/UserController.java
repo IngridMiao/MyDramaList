@@ -99,7 +99,7 @@ public class UserController {
         System.out.println("Login attempt: " + user.getUserName());
         return userService.getUserByUserName(user.getUserName())
                 .map(u -> {
-                    if (u.getPassword() != null && u.getPassword().equals(user.getPassword())) {
+                    if (u.getPassword() != null && userService.verifyPassword(user.getPassword(), u.getPassword())) {
                         System.out.println("Login successful: " + user.getUserName());
                         return ResponseEntity.ok(u);
                     } else {
