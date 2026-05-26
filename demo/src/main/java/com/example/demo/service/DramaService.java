@@ -60,6 +60,7 @@ public class DramaService {
                             drama.getLink2(),
                             drama.getLink3(),
                             drama.getPosterPath(),
+                            drama.getCategory(),
                             drama.getUpdatedAt()
                     );
                 }).collect(java.util.stream.Collectors.toList());
@@ -84,6 +85,7 @@ public class DramaService {
                     drama.getLink2(),
                     drama.getLink3(),
                     drama.getPosterPath(),
+                    drama.getCategory(),
                     drama.getUpdatedAt()
             );
         }).collect(java.util.stream.Collectors.toList());

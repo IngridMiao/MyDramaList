@@ -30,6 +30,8 @@ public class Drama {
 
     private String posterPath;
 
+    private String category;
+
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }

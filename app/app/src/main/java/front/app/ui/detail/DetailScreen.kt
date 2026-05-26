@@ -3,6 +3,7 @@ package front.app.ui.detail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -68,6 +69,14 @@ fun DetailScreen(
     var editLinks by remember { mutableStateOf(listOf("")) }
     var editActors by remember { mutableStateOf(listOf("")) }
     var editSelectedTags by remember { mutableStateOf(setOf<String>()) }
+    var editCategory by remember { mutableStateOf("長劇") }
+    var editCustomCategory by remember { mutableStateOf("") }
+    val backendCategories by viewModel.categories.collectAsState()
+    val defaultCategories = remember(backendCategories) {
+        val names = backendCategories.map { it.name }
+        if (names.isEmpty()) listOf("長劇", "短劇", "綜藝", "其他")
+        else names + "其他"
+    }
 
     var showTagSelectDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -76,6 +85,7 @@ fun DetailScreen(
     LaunchedEffect(title, userId) {
         viewModel.fetchDrama(title, userId)
         viewModel.fetchTags(userId)
+        viewModel.fetchCategories(userId)
     }
 
     LaunchedEffect(dramaState) {
@@ -87,6 +97,16 @@ fun DetailScreen(
             editLinks = listOfNotNull(drama.link1, drama.link2, drama.link3).filter { it.isNotBlank() }.ifEmpty { listOf("") }
             editActors = drama.actors?.split(",")?.filter { it.isNotBlank() }?.ifEmpty { listOf("") } ?: listOf("")
             editSelectedTags = drama.tag?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+            
+            val cat = drama.category ?: "長劇"
+            val baseCatNames = backendCategories.map { it.name }.ifEmpty { listOf("長劇", "短劇", "綜藝") }
+            if (cat in baseCatNames) {
+                editCategory = cat
+                editCustomCategory = ""
+            } else {
+                editCategory = "其他"
+                editCustomCategory = cat
+            }
         }
     }
 
@@ -121,38 +141,45 @@ fun DetailScreen(
                     },
                     actions = {
                         if (dramaState != null && isMine) {
-                            if (isEditing) {
-                                TextButton(
-                                    onClick = {
-                                        val roundedGrade = if (editGrade == 0f) null else (Math.round(editGrade * 10) / 10f)
-                                        isSaving = true
-                                        val updatedDrama = Drama(
-                                            title = editTitle,
-                                            userId = userId,
-                                            actors = editActors.filter { it.isNotBlank() }.joinToString(","),
-                                            tag = if (editSelectedTags.isEmpty()) null else editSelectedTags.joinToString(","),
-                                            shown = editShown,
-                                            grade = roundedGrade,
-                                            viewPoint = editViewPoint,
-                                            link1 = editLinks.getOrNull(0),
-                                            link2 = editLinks.getOrNull(1),
-                                            link3 = editLinks.getOrNull(2),
-                                            posterPath = dramaState?.posterPath
-                                        )
-                                        viewModel.saveDrama(updatedDrama) {
-                                            isSaving = false
-                                            isEditing = false
+                                    if (isEditing) {
+                                        TextButton(
+                                            onClick = {
+                                                val roundedGrade = if (editGrade == 0f) null else (Math.round(editGrade * 10) / 10f)
+                                                isSaving = true
+                                                val finalCategory = if (editCategory == "其他") editCustomCategory else editCategory
+                                                val updatedDrama = Drama(
+                                                    title = editTitle,
+                                                    userId = userId,
+                                                    actors = editActors.filter { it.isNotBlank() }.joinToString(","),
+                                                    tag = if (editSelectedTags.isEmpty()) null else editSelectedTags.joinToString(","),
+                                                    shown = editShown,
+                                                    grade = roundedGrade,
+                                                    viewPoint = editViewPoint,
+                                                    link1 = editLinks.getOrNull(0),
+                                                    link2 = editLinks.getOrNull(1),
+                                                    link3 = editLinks.getOrNull(2),
+                                                    posterPath = dramaState?.posterPath,
+                                                    category = finalCategory
+                                                )
+
+                                                val newCat = if (editCategory == "其他" && editCustomCategory.isNotBlank() && backendCategories.none { it.name == editCustomCategory }) {
+                                                    front.app.model.Category(userId = userId, name = editCustomCategory)
+                                                } else null
+
+                                                viewModel.saveDrama(updatedDrama, newCategory = newCat) {
+                                                    isSaving = false
+                                                    isEditing = false
+                                                }
+                                            },
+                                            enabled = editTitle.isNotBlank() && !isSaving
+                                        ) { 
+                                            if (isSaving) {
+                                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                            } else {
+                                                Text("儲存", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) 
+                                            }
                                         }
-                                    },
-                                    enabled = editTitle.isNotBlank() && !isSaving
-                                ) { 
-                                    if (isSaving) {
-                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                                     } else {
-                                        Text("儲存", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) 
-                                    }
-                                }
-                            } else {
                                 IconButton(onClick = { isEditing = true }) {
                                     Icon(Icons.Outlined.Edit, contentDescription = "編輯")
                                 }
@@ -268,6 +295,34 @@ fun DetailScreen(
                                         }
                                     }
 
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("分類", style = MaterialTheme.typography.titleSmall)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            defaultCategories.forEach { cat ->
+                                                FilterChip(
+                                                    selected = editCategory == cat,
+                                                    onClick = { editCategory = cat },
+                                                    label = { Text(cat) }
+                                                )
+                                            }
+                                        }
+                                        if (editCategory == "其他") {
+                                            OutlinedTextField(
+                                                value = editCustomCategory,
+                                                onValueChange = { editCustomCategory = it },
+                                                label = { Text("自訂分類名稱") },
+                                                singleLine = true,
+                                                shape = RoundedCornerShape(12.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    }
+
                                     Column {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -336,6 +391,12 @@ fun DetailScreen(
                                     }
                                 } else {
                                     // 瀏覽模式
+                                    if (!drama.category.isNullOrBlank()) {
+                                        DetailSection(label = "分類") {
+                                            FilterBadge(label = drama.category, color = MaterialTheme.colorScheme.secondary)
+                                        }
+                                    }
+
                                     if (!drama.tag.isNullOrBlank()) {
                                         DetailSection(label = "分類標籤") {
                                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

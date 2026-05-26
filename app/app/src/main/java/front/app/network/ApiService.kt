@@ -46,6 +46,13 @@ interface ApiService {
     @POST("api/tags")
     suspend fun saveTag(@Body tag: Tag): Response<Tag>
 
+    // Category APIs
+    @GET("api/categories/{userId}")
+    suspend fun getCategories(@Path("userId") userId: Long): Response<List<front.app.model.Category>>
+
+    @POST("api/categories")
+    suspend fun saveCategory(@Body category: front.app.model.Category): Response<front.app.model.Category>
+
     // Drama APIs
     @GET("api/dramas/public")
     suspend fun getPublicDramas(): Response<List<DramaResponse>>

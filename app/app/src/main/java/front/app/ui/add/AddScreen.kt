@@ -3,6 +3,7 @@ package front.app.ui.add
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -42,6 +43,29 @@ fun AddScreen(
     var shown by remember { mutableStateOf(true) }
     var links by remember { mutableStateOf(listOf("")) }
     var posterPath by remember { mutableStateOf<String?>(null) }
+    var category by remember { mutableStateOf("長劇") }
+    var customCategory by remember { mutableStateOf("") }
+    val backendCategories by viewModel.categories.collectAsState()
+    val defaultCategories = remember(backendCategories) {
+        val names = backendCategories.map { it.name }
+        if (names.isEmpty()) listOf("長劇", "短劇", "綜藝", "其他")
+        else names + "其他"
+    }
+
+    // tag 相關
+    val backendTags by viewModel.tags.collectAsState()
+    val commonTags = remember { dummyTags.filter { it != "全部" } }
+    val displayTags = remember(backendTags) {
+        val backendTagNames = backendTags.map { tag: Tag -> tag.tagName }
+        (commonTags + backendTagNames).distinct()
+    }
+    var selectedTags by remember { mutableStateOf(setOf<String>()) }
+    var showTagSelectDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userId) {
+        viewModel.fetchTags(userId)
+        viewModel.fetchCategories(userId)
+    }
 
     val suggestions by viewModel.suggestions.collectAsState()
     var showSuggestions by remember { mutableStateOf(false) }
@@ -56,21 +80,6 @@ fun AddScreen(
             viewModel.clearSuggestions()
             showSuggestions = false
         }
-    }
-
-    // tag 相關
-    val backendTags by viewModel.tags.collectAsState()
-    val commonTags = remember { dummyTags.filter { it != "全部" } }
-    val displayTags = remember(backendTags) {
-        val backendTagNames = backendTags.map { tag: Tag -> tag.tagName }
-        (commonTags + backendTagNames).distinct()
-    }
-
-    var selectedTags by remember { mutableStateOf(setOf<String>()) }
-    var showTagSelectDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(userId) {
-        viewModel.fetchTags(userId)
     }
 
     Box(modifier = Modifier
@@ -99,6 +108,7 @@ fun AddScreen(
                         TextButton(
                             onClick = {
                                 val roundedGrade = if (grade == 0f) null else (Math.round(grade * 10) / 10f)
+                                val finalCategory = if (category == "其他") customCategory else category
                                 val drama = Drama(
                                     title = title,
                                     userId = userId,
@@ -110,9 +120,15 @@ fun AddScreen(
                                     link1 = links.getOrNull(0),
                                     link2 = links.getOrNull(1),
                                     link3 = links.getOrNull(2),
-                                    posterPath = posterPath
+                                    posterPath = posterPath,
+                                    category = finalCategory
                                 )
-                                viewModel.saveDrama(drama) {
+                                
+                                val newCat = if (category == "其他" && customCategory.isNotBlank() && backendCategories.none { it.name == customCategory }) {
+                                    front.app.model.Category(userId = userId, name = customCategory)
+                                } else null
+                                
+                                viewModel.saveDrama(drama, newCategory = newCat) {
                                     onSave()
                                 }
                             },
@@ -193,6 +209,39 @@ fun AddScreen(
                                             }
                                         }
                                     }
+                                }
+                            }
+
+                            // ── 分類 ──
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(
+                                    "分類",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    defaultCategories.forEach { cat ->
+                                        FilterChip(
+                                            selected = category == cat,
+                                            onClick = { category = cat },
+                                            label = { Text(cat) }
+                                        )
+                                    }
+                                }
+                                if (category == "其他") {
+                                    OutlinedTextField(
+                                        value = customCategory,
+                                        onValueChange = { customCategory = it },
+                                        label = { Text("自訂分類名稱") },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
                                 }
                             }
 

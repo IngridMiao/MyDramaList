@@ -13,5 +13,6 @@ data class DramaResponse(
     val link2: String? = null,
     val link3: String? = null,
     val posterPath: String? = null,
+    val category: String? = null,
     val updatedAt: String? = null
 )

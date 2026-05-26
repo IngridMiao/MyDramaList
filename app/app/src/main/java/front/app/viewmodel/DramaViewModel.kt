@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import front.app.model.*
 import front.app.repository.DramaRepository
 import front.app.repository.TagRepository
+import front.app.repository.CategoryRepository
+import front.app.repository.UserRepository
 import front.app.network.TmdbRetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +17,8 @@ import kotlinx.coroutines.awaitAll
 class DramaViewModel : ViewModel() {
     private val repository = DramaRepository()
     private val tagRepository = TagRepository()
-    private val userRepository = front.app.repository.UserRepository()
+    private val categoryRepository = CategoryRepository()
+    private val userRepository = UserRepository()
     private val tmdbService = TmdbRetrofitClient.instance
 
     private val _dramas = MutableStateFlow<List<Drama>>(emptyList())
@@ -26,6 +29,9 @@ class DramaViewModel : ViewModel() {
 
     private val _tags = MutableStateFlow<List<Tag>>(emptyList())
     val tags = _tags.asStateFlow()
+
+    private val _categories = MutableStateFlow<List<front.app.model.Category>>(emptyList())
+    val categories = _categories.asStateFlow()
 
     private val _currentDrama = MutableStateFlow<Drama?>(null)
     val currentDrama = _currentDrama.asStateFlow()
@@ -221,11 +227,37 @@ class DramaViewModel : ViewModel() {
         }
     }
 
+    fun fetchCategories(userId: Long) {
+        viewModelScope.launch {
+            try {
+                val response = categoryRepository.getCategories(userId)
+                if (response.isSuccessful) {
+                    _categories.value = response.body() ?: emptyList()
+                }
+            } catch (e: Exception) {
+                // Error handling
+            }
+        }
+    }
+
+    fun saveCategory(category: front.app.model.Category, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val response = categoryRepository.saveCategory(category)
+                if (response.isSuccessful) {
+                    fetchCategories(category.userId)
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                // Error handling
+            }
+        }
+    }
+
     fun fetchDrama(title: String, userId: Long) {
         viewModelScope.launch {
             _hasFetchedDetail.value = false
             _isDetailLoading.value = true
-            // 不再清空資料，以利即時顯示
             try {
                 val response = repository.getDrama(title, userId)
                 if (response.isSuccessful) {
@@ -257,19 +289,28 @@ class DramaViewModel : ViewModel() {
             link2 = response.link2,
             link3 = response.link3,
             posterPath = response.posterPath,
+            category = response.category,
             updatedAt = response.updatedAt
         )
     }
 
-    fun saveDrama(drama: Drama, onComplete: () -> Unit = {}) {
+    fun saveDrama(drama: Drama, newCategory: front.app.model.Category? = null, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             try {
+                // 如果有新分類，先存分類
+                if (newCategory != null) {
+                    val catResponse = categoryRepository.saveCategory(newCategory)
+                    if (catResponse.isSuccessful) {
+                        fetchCategories(newCategory.userId)
+                    } else {
+                        android.util.Log.e("DramaViewModel", "Save Category Failed: ${catResponse.errorBody()?.string()}")
+                    }
+                }
+
                 val response = repository.saveDrama(drama)
                 if (response.isSuccessful) {
-                    // 更新當前劇集，讓 UI 立即有感
                     _currentDrama.value = drama
                     
-                    // 更新劇集列表
                     val currentList = _dramas.value.toMutableList()
                     val index = currentList.indexOfFirst { it.title == drama.title }
                     if (index != -1) {
@@ -278,11 +319,13 @@ class DramaViewModel : ViewModel() {
                         currentList.add(0, drama)
                     }
                     _dramas.value = currentList
-                    
-                    onComplete()
+                } else {
+                    android.util.Log.e("DramaViewModel", "Save Drama Failed: ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
-                // Error handling
+                android.util.Log.e("DramaViewModel", "Save Drama Error", e)
+            } finally {
+                onComplete()
             }
         }
     }
@@ -292,7 +335,6 @@ class DramaViewModel : ViewModel() {
             try {
                 val response = repository.deleteDrama(title, userId)
                 if (response.isSuccessful) {
-                    // Refresh and wait for completion before going back
                     val refreshResponse = repository.getDramas(userId)
                     if (refreshResponse.isSuccessful) {
                         _dramas.value = refreshResponse.body() ?: emptyList()

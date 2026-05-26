@@ -5,8 +5,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,17 +76,29 @@ fun HomeScreen(
     val dramas by viewModel.dramas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    val backendCategories by viewModel.categories.collectAsState()
+    val categories = remember(backendCategories) {
+        listOf("全部") + backendCategories.map { it.name }
+    }
+
     LaunchedEffect(userId) {
         viewModel.fetchDramas(userId)
         viewModel.fetchTags(userId)
+        viewModel.fetchCategories(userId)
     }
 
-    val filteredDramas = remember(dramas, searchQuery, selectedTags, sortType, shownFilter) {
+    var selectedCategory by remember { mutableStateOf("全部") }
+
+    val filteredDramas = remember(dramas, searchQuery, selectedTags, sortType, shownFilter, selectedCategory) {
         dramas
             .filter { drama: Drama ->
                 if (searchQuery.isBlank()) true
                 else drama.title.contains(searchQuery, ignoreCase = true) ||
                         (drama.actors ?: "").contains(searchQuery, ignoreCase = true)
+            }
+            .filter { drama ->
+                if (selectedCategory == "全部") true
+                else drama.category == selectedCategory
             }
             .filter { drama ->
                 if (selectedTags.isEmpty()) true
@@ -148,6 +162,23 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             )
+
+            // ── 分類 ──
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                categories.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategory == category,
+                        onClick = { selectedCategory = category },
+                        label = { Text(category) }
+                    )
+                }
+            }
 
             // ── Tag 列 ──
             Surface(
