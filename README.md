@@ -40,6 +40,14 @@
 *   **資料庫 (Database)**：Supabase (PostgreSQL 核心)
 *   **建置工具 (Build Tool)**：Gradle (Android) / Maven 或 Gradle (Spring Boot)
 
+## 📝 開發備註 (Technical Notes)
+
+### 動態 API 連線設定 (Dynamic BASE_URL)
+為了方便開發者在不同環境下測試，前端 Android 專案採用了動態偵測技術來設定 API 的 `BASE_URL`：
+*   **虛擬機 (Emulator)**：系統偵測到模擬器環境時，會自動連線至 `http://10.0.2.2:8080/` (訪問電腦本機服務)。
+*   **實機測試 (Real Device)**：若在實機上執行，系統將預設使用開發環境的區域 IP (如：`http://10.43.144.128:8080/`)。
+    *   *註：若您的實機測試環境 IP 不同，請至 `RetrofitClient.kt` 修改對應的 IP 位址。*
+
 ## 🚀 安裝與執行 (Installation & Run)
 
 ### 前置需求
