@@ -8,7 +8,23 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 
 object RetrofitClient {
-    private const val BASE_URL = "http://10.43.144.128:8080/"
+    private val BASE_URL: String = if (isEmulator()) {
+        "http://10.0.2.2:8080/"
+    } else {
+        "http://10.43.144.128:8080/"
+    }
+
+    private fun isEmulator(): Boolean {
+        return android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.startsWith("unknown")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.MODEL.contains("Android SDK built for x86")
+                || android.os.Build.MANUFACTURER.contains("Genymotion")
+                || (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+                || "google_sdk" == android.os.Build.PRODUCT
+    }
+
     private var okHttpClient: OkHttpClient? = null
 
     fun init(context: Context) {
