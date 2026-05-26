@@ -22,6 +22,7 @@ import front.app.ui.theme.*
 @Composable
 fun ProfileScreen(
     themeViewModel: ThemeViewModel,
+    userName: String = "一般帳號",
     onLogout: () -> Unit = {},
     onDeleteAccount: () -> Unit = {}
 ) {
@@ -81,7 +82,7 @@ fun ProfileScreen(
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "一般帳號",
+                            text = userName,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(

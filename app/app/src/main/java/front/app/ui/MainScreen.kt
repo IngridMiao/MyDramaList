@@ -26,6 +26,7 @@ import front.app.viewmodel.DramaViewModel
 fun MainScreen(
     themeViewModel: ThemeViewModel,
     userId: Long,
+    userName: String,
     onLogout: () -> Unit = {}
 ) {
     val navController = rememberNavController()
@@ -90,6 +91,7 @@ fun MainScreen(
             composable("profile") {
                 ProfileScreen(
                     themeViewModel = themeViewModel,
+                    userName = userName,
                     onLogout = onLogout,
                     onDeleteAccount = onLogout
                 )

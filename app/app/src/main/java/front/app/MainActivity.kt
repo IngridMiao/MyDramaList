@@ -145,20 +145,24 @@ class MainActivity : ComponentActivity() {
             ) {
                 var isLoggedIn by remember { mutableStateOf(false) }
                 var currentUserId by remember { mutableLongStateOf(-1L) }
+                var currentUserName by remember { mutableStateOf("") }
 
                 if (isLoggedIn) {
                     MainScreen(
                         themeViewModel = themeViewModel,
                         userId = currentUserId,
+                        userName = currentUserName,
                         onLogout = { 
                             isLoggedIn = false
                             currentUserId = -1L
+                            currentUserName = ""
                         }
                     )
                 } else {
                     LoginScreen(
-                        onLoginSuccess = { userId ->
+                        onLoginSuccess = { userId, userName ->
                             currentUserId = userId
+                            currentUserName = userName
                             isLoggedIn = true
                         }
                     )

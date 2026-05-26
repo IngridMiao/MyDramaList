@@ -26,7 +26,7 @@ import front.app.ui.theme.*
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (Long) -> Unit = {},
+    onLoginSuccess: (Long, String) -> Unit = { _, _ -> },
     viewModel: LoginViewModel = viewModel()
 ) {
     var username by remember { mutableStateOf("") }
@@ -40,7 +40,7 @@ fun LoginScreen(
     LaunchedEffect(loginState) {
         when (val state = loginState) {
             is LoginViewModel.LoginResult.Success -> {
-                onLoginSuccess(state.user.id ?: 0L)
+                onLoginSuccess(state.user.id ?: 0L, state.user.userName)
                 viewModel.resetState()
             }
             is LoginViewModel.LoginResult.Error -> {
