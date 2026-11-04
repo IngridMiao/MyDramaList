@@ -1,6 +1,7 @@
 package front.app.network
 
 import android.content.Context
+import front.app.BuildConfig
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -9,7 +10,7 @@ import java.io.File
 
 object TmdbRetrofitClient {
     private const val BASE_URL = "https://api.themoviedb.org/3/"
-    const val API_KEY = "a715b17df421ef32d6670a97d7f3e82c" 
+    val API_KEY: String = BuildConfig.TMDB_API_KEY
 
     private var okHttpClient: OkHttpClient? = null
 

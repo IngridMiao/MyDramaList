@@ -1,6 +1,7 @@
 package front.app.network
 
 import android.content.Context
+import front.app.BuildConfig
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -16,7 +17,7 @@ object RetrofitClient {
             "http://10.0.2.2:8080/"
         }
     } else {
-        "http://10.43.144.128:8080/"
+        BuildConfig.BACKEND_URL
     }
 
     private fun isEmulator(): Boolean {
