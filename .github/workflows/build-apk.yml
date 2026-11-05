@@ -1,0 +1,47 @@
+name: Build APK
+
+on:
+  push:
+    tags: ['v*']          # push 像 v1.0.0 的 tag 時觸發，並自動建立 Release
+  workflow_dispatch:      # 也可以在 Actions 頁面手動按 Run workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: app   # Android 專案在 repo 的 app/ 資料夾裡
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17       # AGP 8.12 需要 JDK 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+        env:
+          # 在 GitHub repo 的 Settings → Secrets and variables → Actions 新增這兩個 secret
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk MyDramaList-${{ github.ref_name }}.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MyDramaList-apk
+          path: app/MyDramaList-*.apk
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: app/MyDramaList-*.apk
