@@ -1,0 +1,6 @@
+target/
+secrets.properties
+run.log
+.idea/
+.vscode/
+.mvn/
