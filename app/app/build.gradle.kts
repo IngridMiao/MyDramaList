@@ -30,7 +30,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "TMDB_API_KEY", "\"${config("TMDB_API_KEY")}\"")
-        buildConfigField("String", "BACKEND_URL", "\"${config("BACKEND_URL", "http://10.43.144.128:8080/")}\"")
+        // BACKEND_URL 留空時，模擬器會自動連到電腦本機的 8080（見 RetrofitClient.kt）
+        buildConfigField("String", "BACKEND_URL", "\"${config("BACKEND_URL")}\"")
     }
 
     buildTypes {
@@ -81,6 +82,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.gson)
+    // 明確指定 OkHttp 4（RetrofitClient 的逾時與重試設定需要）
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Coil
     implementation(libs.coil.compose)

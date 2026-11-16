@@ -7,6 +7,8 @@ import front.app.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.io.InterruptedIOException
 
 class LoginViewModel : ViewModel() {
     private val repository = UserRepository()
@@ -16,6 +18,7 @@ class LoginViewModel : ViewModel() {
 
     fun login(userName: String, password: String) {
         viewModelScope.launch {
+            _loginState.value = LoginResult.Loading
             try {
                 val response = repository.login(User(userName = userName, password = password))
                 if (response.isSuccessful) {
@@ -29,13 +32,14 @@ class LoginViewModel : ViewModel() {
                     _loginState.value = LoginResult.Error(message)
                 }
             } catch (e: Exception) {
-                _loginState.value = LoginResult.Error("發生錯誤: ${e.message}")
+                _loginState.value = LoginResult.Error(networkErrorMessage(e))
             }
         }
     }
 
     fun register(userName: String, password: String) {
         viewModelScope.launch {
+            _loginState.value = LoginResult.Loading
             try {
                 val response = repository.createUser(User(userName = userName, password = password))
                 if (response.isSuccessful) {
@@ -49,9 +53,16 @@ class LoginViewModel : ViewModel() {
                     _loginState.value = LoginResult.Error(message)
                 }
             } catch (e: Exception) {
-                _loginState.value = LoginResult.Error("發生錯誤: ${e.message}")
+                _loginState.value = LoginResult.Error(networkErrorMessage(e))
             }
         }
+    }
+
+    private fun networkErrorMessage(e: Exception): String = when (e) {
+        // SocketTimeoutException、callTimeout 都屬於 InterruptedIOException
+        is InterruptedIOException -> "伺服器回應逾時（可能正在喚醒），請再按一次登入"
+        is IOException -> "無法連線到伺服器，請確認網路後再試"
+        else -> "發生錯誤: ${e.message}"
     }
 
     fun resetState() {
@@ -59,6 +70,7 @@ class LoginViewModel : ViewModel() {
     }
 
     sealed class LoginResult {
+        object Loading : LoginResult()
         data class Success(val user: User) : LoginResult()
         data class Error(val message: String) : LoginResult()
     }

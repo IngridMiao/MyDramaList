@@ -36,6 +36,7 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val loginState by viewModel.loginState.collectAsState()
+    val isLoading = loginState is LoginViewModel.LoginResult.Loading
 
     LaunchedEffect(loginState) {
         when (val state = loginState) {
@@ -46,7 +47,7 @@ fun LoginScreen(
             is LoginViewModel.LoginResult.Error -> {
                 errorMessage = state.message
             }
-            null -> {}
+            LoginViewModel.LoginResult.Loading, null -> {}
         }
     }
 
@@ -141,6 +142,7 @@ fun LoginScreen(
                             errorMessage = null
                             viewModel.login(username, password) 
                         },
+                        enabled = !isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(54.dp),
@@ -154,8 +156,25 @@ fun LoginScreen(
                                 .background(getAppGradient(), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("登入", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Text("登入", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
                         }
+                    }
+
+                    if (isLoading) {
+                        Text(
+                            text = "連線中…若伺服器剛從休眠喚醒，第一次可能需要 30～60 秒",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
